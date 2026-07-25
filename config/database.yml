@@ -1,9 +1,10 @@
 development:
   adapter: postgresql
-  database: mocink-final-dev
-  user: mocink # Also accept 'username' as key, if both are present 'username' is used
-  password: careBear2013!!$$
-  host: localhost
+  database: bitspace
+  user: zerosum # Also accept 'username' as key, if both are present 'username' is used
+  port: 25060
+  password: AVNS_sVWPrIrYeFBSL4ceyAw
+  host: dbaas-db-8652013-do-user-2688544-0.f.db.ondigitalocean.com
 
 # default: &default
 #   adapter: sqlite3
