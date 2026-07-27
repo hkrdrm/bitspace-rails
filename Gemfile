@@ -76,6 +76,6 @@ gem "bcrypt", "~> 3.1", require: false
 # Used by Rodauth for rendering built-in view and email templates
 gem "tilt", "~> 2.4", require: false
 
-gem "tailwindcss-ruby", "~> 4.1"
+gem "tailwindcss-ruby", "~> 4.3"
 
 gem "tailwindcss-rails", "~> 4.2"
