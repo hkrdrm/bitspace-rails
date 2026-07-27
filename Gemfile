@@ -78,4 +78,4 @@ gem "tilt", "~> 2.4", require: false
 
 gem "tailwindcss-ruby", "~> 4.1"
 
-gem "tailwindcss-rails", "~> 4.2"
+gem "tailwindcss-rails", "~> 4.6"
