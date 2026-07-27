@@ -1,0 +1,20 @@
+<%
+  icon_classes = local_assigns[:classes] || "w-8 h-8 text-brand-green shrink-0 mt-0.5"
+%>
+<% case icon %>
+<% when :droplet %>
+  <svg class="<%= icon_classes %>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M12 2.5s6 7 6 11.5a6 6 0 11-12 0c0-4.5 6-11.5 6-11.5z" />
+  </svg>
+<% when :shirt %>
+  <%= render "shared/shirt_icon", classes: icon_classes %>
+<% when :bolt %>
+  <svg class="<%= icon_classes %>" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" />
+  </svg>
+<% when :pin %>
+  <svg class="<%= icon_classes %>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" />
+    <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
+<% end %>

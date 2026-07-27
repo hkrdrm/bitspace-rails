@@ -1,19 +1,19 @@
-<nav>
-  <div class="flex row justify-between bg-slate-950 text-white font-bold gap-8 px-8 py-2 shadow-md shadow-black">
-    <div class="flex row items-center gap-4">
-      <!-- logo -->
+<nav class="bg-ink text-white border-b-4 border-brand-green">
+  <div class="flex flex-row items-center justify-between gap-6 px-8 py-3 max-w-7xl mx-auto">
+    <%= link_to root_path, class: "font-display text-2xl md:text-3xl tracking-wide flex items-center shrink-0" do %>
+      <span class="text-brand-green">BIT</span><span class="inline-block w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-brand-orange mx-1"></span><span>SPACE</span>
+    <% end %>
 
-      <!-- <%= image_tag("3rd_eye_smiley.png", style: 'height:40px;width:40px;') %> -->
-
-      <!-- title / brand -->
-      <h1 class="text-3xl mr-4">Bitspace Studio</h1>
-
-      <!-- navigation -->
-      <span> Services    </span>
-      <span> Store       </span>
-      <span> <a href="https://my-portfolio-sooty-one-83.vercel.app/">Portfolio</a> </span>
+    <div class="hidden md:flex flex-row items-center gap-8 font-bold text-sm tracking-wider uppercase">
+      <span>Services</span>
+      <span>Store</span>
+      <span><%= link_to "Portfolio", "https://my-portfolio-sooty-one-83.vercel.app/" %></span>
+      <span>About</span>
+      <span>Contact</span>
     </div>
 
-    <!-- user menu -->
+    <%= link_to "#", class: "shrink-0 inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-white font-bold text-sm tracking-wide uppercase px-4 py-2 rounded" do %>
+      Get a Quote <span aria-hidden="true">&rarr;</span>
+    <% end %>
   </div>
 </nav>

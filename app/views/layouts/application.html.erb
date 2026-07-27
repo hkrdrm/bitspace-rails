@@ -8,6 +8,10 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <%= yield :head %>
 
     <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
@@ -37,11 +41,26 @@
       <%= yield %>
     </div>
 
-    <footer>
-      <div class="flex flex-row items-center justify-center width-full">
-        <%= image_tag("Facebook_Logo_Primary.png", style: 'height:64px; width:64px;', class: "m-16") %>
-        <%= image_tag("Instagram_Glyph_Gradient.png", style: 'height:64px; width:64px;', class: "m-16") %>
-        <%= image_tag("TikTok_Icon_Black_Circle.png", style: 'height:64px; width:64px;', class: "m-16") %>
+    <footer class="bg-ink text-white border-t-4 border-brand-green bg-cover bg-center" style="background-image: url('<%= image_path('footer_background.png') %>')">
+      <div class="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="flex flex-col items-center md:items-start gap-2 shrink-0">
+          <div class="font-display text-2xl tracking-wide flex items-center">
+            <span class="text-brand-green">BIT</span><span class="inline-block w-2.5 h-2.5 rounded-full bg-brand-orange mx-1"></span><span>SPACE</span>
+          </div>
+        </div>
+
+        <div class="flex flex-col items-center gap-3 shrink-0">
+          <div class="text-xs font-bold tracking-widest uppercase text-gray-300">Let&rsquo;s print something great.</div>
+          <%= link_to "#", class: "inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-white font-bold text-sm tracking-wide uppercase px-4 py-2 rounded" do %>
+            Get a Quote <span aria-hidden="true">&rarr;</span>
+          <% end %>
+        </div>
+
+        <div class="flex flex-row items-center gap-4 shrink-0">
+          <%= image_tag("Facebook_Logo_Primary.png", style: 'height:36px; width:36px;', class: "rounded-full") %>
+          <%= image_tag("Instagram_Glyph_Gradient.png", style: 'height:36px; width:36px;', class: "rounded-full") %>
+          <%= image_tag("TikTok_Icon_Black_Circle.png", style: 'height:36px; width:36px;', class: "rounded-full") %>
+        </div>
       </div>
     </footer>
   </body>

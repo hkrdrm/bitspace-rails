@@ -1,7 +1,118 @@
-<% if rodauth.logged_in? %>
-  <%# <h1 class="text-blue-600 bg-black"> Hello world! Your logged in chico </h1> %>
-<% else %>
-  <%# <h1 class="text-blue-600 bg-black"> Hello world! No Beano! </h1> %>
-<% end %>
+<div class="bg-white text-ink">
 
-<%= image_tag("small_batch.png", style: 'height:800px;') %> 
+  <%# ---------- Hero ---------- %>
+  <section class="max-w-7xl mx-auto px-6 pt-12 pb-16 md:pt-16 grid md:grid-cols-2 gap-10 items-center">
+    <div>
+      <h1 class="font-display text-5xl md:text-6xl leading-[0.95] tracking-tight">
+        <span class="block text-black">LOCAL PRINTS.</span>
+        <span class="block text-brand-green">BUILT TO LAST.</span>
+      </h1>
+
+      <p class="mt-6 text-lg text-gray-700 max-w-md">
+        Small batch screen prints from Bitspace Studio in
+        <span class="text-brand-green font-bold">McComb, MS</span>.
+      </p>
+
+      <ul class="mt-6 space-y-3 font-bold text-sm md:text-base">
+        <li class="flex items-center gap-3">
+          <%= render "shared/check_icon" %>
+          <span><span class="text-brand-orange">$12</span>, a shirt &ndash; front &amp; back print</span>
+        </li>
+        <li class="flex items-center gap-3">
+          <%= render "shared/check_icon" %>
+          <span>Small batch quality</span>
+        </li>
+        <li class="flex items-center gap-3">
+          <%= render "shared/check_icon" %>
+          <span>Fast turnaround</span>
+        </li>
+        <li class="flex items-center gap-3">
+          <%= render "shared/check_icon" %>
+          <span>Printed right here in McComb, MS</span>
+        </li>
+      </ul>
+
+      <div class="mt-8 flex items-center gap-6 flex-wrap">
+        <%= link_to "#", class: "inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-white font-bold text-sm tracking-wide uppercase px-6 py-3 rounded" do %>
+          Get a Quote <span aria-hidden="true">&rarr;</span>
+        <% end %>
+        <%= link_to "#", class: "inline-flex items-center gap-2 font-bold text-sm tracking-wide uppercase underline decoration-2 underline-offset-4 text-brand-green" do %>
+          Or Shop Now <span aria-hidden="true">&rarr;</span>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="overflow-hidden aspect-[4/3]">
+      <%= image_tag "matt_screenprinting.png", class: "w-full h-full object-cover", style: "object-position: 68% 35%;", alt: "Bitspace Studio screen printing" %>
+    </div>
+  </section>
+
+  <%= render "shared/section_divider" %>
+
+  <%# ---------- Feature strip ---------- %>
+  <section class="bg-white">
+    <div class="max-w-7xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-8">
+      <div class="flex items-center gap-4">
+        <%= image_tag "quality-prints-icon.png", class: "w-16 h-16 shrink-0", alt: "" %>
+        <div>
+          <div class="font-bold text-sm uppercase tracking-wide">Quality Prints</div>
+          <p class="text-sm text-gray-600 mt-1">Built to last with top notch inks &amp; materials.</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <%= image_tag "custom-for-you-icon.png", class: "w-16 h-16 shrink-0", alt: "" %>
+        <div>
+          <div class="font-bold text-sm uppercase tracking-wide">Small Batch</div>
+          <p class="text-sm text-gray-600 mt-1">Perfect for bands, events, brands &amp; crews.</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <%= image_tag "bitspace-fast-turnaround-icon-clean.png", class: "w-16 h-16 shrink-0", alt: "" %>
+        <div>
+          <div class="font-bold text-sm uppercase tracking-wide">Fast Turnaround</div>
+          <p class="text-sm text-gray-600 mt-1">Local. Reliable. On time.</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <%= image_tag "local-service-icon.png", class: "w-16 h-16 shrink-0", alt: "" %>
+        <div>
+          <div class="font-bold text-sm uppercase tracking-wide">Local in McComb</div>
+          <p class="text-sm text-gray-600 mt-1">Proudly printing in McComb, MS and the surrounding area.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <%= render "shared/section_divider" %>
+
+  <%# ---------- Pricing panel ---------- %>
+  <section class="max-w-7xl mx-auto px-6 py-12">
+    <%= image_tag "shirt_deals2.png", class: "w-full h-auto rounded-xl", alt: "$12 a shirt, front and back print, any size, any design, 1 or 2 colors, minimum order 10 shirts" %>
+  </section>
+
+  <%= render "shared/section_divider" %>
+
+  <%# ---------- Local shop / service area ---------- %>
+  <section class="max-w-7xl mx-auto px-6 py-12">
+    <div class="flex flex-row space-around w-full justify-center gap-32">
+
+      <div class="flex flex-row items-center justify-center w-1/4">
+        <%= image_tag "mccomb-ms.png", class: "h-32 md:h-40 w-auto object-contain shrink-0", alt: "McComb, MS and surrounding areas" %>
+      </div>
+
+      <div class="flex flex-col justify-center w-1/4">
+        <h2 class="font-display text-2xl">
+          YOUR LOCAL PRINT SHOP <span class="block text-brand-green">IN MCCOMB, MS</span>
+        </h2>
+        <p class="mt-4 text-sm text-gray-700">
+          From small runs to big ideas, we bring your designs to life with bold ink, hometown pride, and quality that stands out.
+        </p>
+        <div class="mt-6 flex gap-3">
+          <%= link_to "About Us", "#", class: "border-2 border-ink font-bold text-xs uppercase tracking-wide px-4 py-2 rounded" %>
+          <%= link_to "View Work", "#", class: "border-2 border-brand-green text-brand-green font-bold text-xs uppercase tracking-wide px-4 py-2 rounded" %>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>

@@ -1,1 +1,11 @@
 @import "tailwindcss";
+
+@theme {
+  --font-display: "Anton", "Arial Narrow", sans-serif;
+  --font-sans: "Inter", ui-sans-serif, sans-serif;
+
+  --color-ink: #0d1114;
+  --color-brand-green: #5c7a1e;
+  --color-brand-green-dark: #4a621a;
+  --color-brand-orange: #dd440c;
+}
