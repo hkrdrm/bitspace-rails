@@ -3,7 +3,7 @@
 # CI calls it over SSH (see .github/workflows/ci.yml); you can also run it by hand.
 set -euo pipefail
 
-PUMA_SERVICE="${PUMA_SERVICE:-puma}"
+PUMA_SERVICE="${PUMA_SERVICE:-puma-bitspace-rails}"
 export RAILS_ENV=production
 
 cd "$(dirname "$0")/.."
