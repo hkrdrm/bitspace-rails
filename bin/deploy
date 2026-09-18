@@ -15,15 +15,16 @@ fi
 
 echo "== Deploying $(git rev-parse --short HEAD) =="
 
+# Production env vars live in .env and are loaded by the dotenv CLI (same as the
+# systemd unit), so the dotenv gem's group must stay installed.
 echo "== Installing gems =="
-bundle config set --local without "development test"
 bundle install --quiet
 
 echo "== Migrating database =="
-bin/rails db:migrate
+bundle exec dotenv -f .env bin/rails db:migrate
 
 echo "== Precompiling assets =="
-bin/rails assets:precompile
+bundle exec dotenv -f .env bin/rails assets:precompile
 
 echo "== Restarting $PUMA_SERVICE =="
 sudo systemctl restart "$PUMA_SERVICE"
