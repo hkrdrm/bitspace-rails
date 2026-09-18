@@ -119,8 +119,8 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           fingerprint: ${{ secrets.DEPLOY_HOST_FINGERPRINT }}
-          script_stop: true
           script: |
+            set -e
             cd ${{ secrets.DEPLOY_PATH }}
             git fetch origin master
             git reset --hard ${{ github.sha }}
