@@ -1,14 +1,14 @@
 require_relative "boot"
 
 # sequel stuff
-%w(
+%w[
   action_cable/engine
   action_controller/railtie
   action_mailer/railtie
   action_view/railtie
   active_job/railtie
   rails/test_unit/railtie
-).each do |railtie|
+].each do |railtie|
   begin
     require railtie
   rescue LoadError

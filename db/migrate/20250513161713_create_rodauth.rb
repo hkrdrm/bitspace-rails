@@ -10,7 +10,7 @@ Sequel.migration do
       citext :email, null: false
       constraint :valid_email, email: /^[^,;@ \r\n]+@[^,@; \r\n]+\.[^,@; \r\n]+$/
       Integer :status, null: false, default: 1
-      index :email, unique: true, where: { status: [1, 2] }
+      index :email, unique: true, where: { status: [ 1, 2 ] }
       String :password_hash
     end
 

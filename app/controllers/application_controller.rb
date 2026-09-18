@@ -4,14 +4,14 @@ class ApplicationController < ActionController::Base
 
   private
   def current_session
-		User::Session.find
+    User::Session.find
   end
 
   def current_user
     @current_user ||= current_session.record
   end
 
-	def current_account
+  def current_account
     rodauth.rails_account
   end
 

@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Runs on the production server after the new code is checked out.
+# CI calls it over SSH (see .github/workflows/ci.yml); you can also run it by hand.
+set -euo pipefail
+
+PUMA_SERVICE="${PUMA_SERVICE:-puma}"
+export RAILS_ENV=production
+
+cd "$(dirname "$0")/.."
+
+# Non-interactive SSH sessions skip shell rc files, so load rbenv explicitly.
+if [ -d "$HOME/.rbenv" ]; then
+  export PATH="$HOME/.rbenv/bin:$HOME/.rbenv/shims:$PATH"
+fi
+
+echo "== Deploying $(git rev-parse --short HEAD) =="
+
+echo "== Installing gems =="
+bundle config set --local without "development test"
+bundle install --quiet
+
+echo "== Migrating database =="
+bin/rails db:migrate
+
+echo "== Precompiling assets =="
+bin/rails assets:precompile
+
+echo "== Restarting $PUMA_SERVICE =="
+sudo systemctl restart "$PUMA_SERVICE"
+
+sleep 3
+if ! systemctl is-active --quiet "$PUMA_SERVICE"; then
+  echo "!! $PUMA_SERVICE failed to start"
+  sudo journalctl -u "$PUMA_SERVICE" -n 30 --no-pager
+  exit 1
+fi
+
+echo "== Deployed =="

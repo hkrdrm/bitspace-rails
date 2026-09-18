@@ -7,9 +7,9 @@ class Issue < Sequel::Model(:comic_issues)
 
   def next_issue
     if Issue.last.id == id
-      return 1
+      1
     else
-      return id + 1
+      id + 1
     end
   end
 
