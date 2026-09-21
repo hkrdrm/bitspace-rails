@@ -590,7 +590,7 @@ extraction is provably non-breaking."
   - `admin_root_path` → `/admin`
   - `admin/_tabs` partial — renders the admin sub-nav; no locals
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `test/integration/admin_authorization_test.rb`:
 
@@ -622,12 +622,14 @@ class AdminAuthorizationTest < ActionDispatch::IntegrationTest
 end
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bin/rails test test/integration/admin_authorization_test.rb`
-Expected: all three FAIL — `/admin` is not routed yet, so every request 404s and the redirect/success assertions fail.
+Expected: two FAIL — `/admin` is not routed yet, so the redirect and success assertions get a 404 instead. The non-superuser test passes *vacuously* at this point, for the wrong reason (no route rather than the gate); it only becomes meaningful after Step 3.
 
-- [ ] **Step 3: Add the gate and remove dead code from ApplicationController**
+Executed with a fourth test added, asserting the gate covers all four admin paths rather than only the overview — the accounts, orders and traffic controllers inherit the same gate and the tabs link to them.
+
+- [x] **Step 3: Add the gate and remove dead code from ApplicationController**
 
 Replace `app/controllers/application_controller.rb` with:
 
@@ -659,7 +661,7 @@ end
 
 The removed `current_session` and `current_user` methods referenced a `User::Session` constant that does not exist in this codebase; calling either would have raised `NameError`.
 
-- [ ] **Step 4: Add the admin controllers**
+- [x] **Step 4: Add the admin controllers**
 
 Create `app/controllers/admin/base_controller.rb`:
 
@@ -684,7 +686,7 @@ end
 
 Named `OverviewController` rather than `DashboardController` so it is never confused with the top-level `DashboardController` serving the user dashboard.
 
-- [ ] **Step 5: Add the routes**
+- [x] **Step 5: Add the routes**
 
 In `config/routes.rb`, add below the `dashboard` line:
 
@@ -701,7 +703,7 @@ Plain `get` routes rather than `resources` — `resources :traffic` would genera
 
 The `accounts`, `orders`, and `traffic` controllers arrive in Tasks 5 and 7. Their routes are added now so the tabs partial can link to them without raising `NameError` on an undefined path helper.
 
-- [ ] **Step 6: Add the admin tabs partial**
+- [x] **Step 6: Add the admin tabs partial**
 
 Create `app/views/admin/_tabs.html.erb`:
 
@@ -716,7 +718,7 @@ Create `app/views/admin/_tabs.html.erb`:
       ] %>
 ```
 
-- [ ] **Step 7: Build the overview page**
+- [x] **Step 7: Build the overview page**
 
 Create `app/views/admin/overview/index.html.erb`:
 
@@ -758,7 +760,7 @@ Create `app/views/admin/overview/index.html.erb`:
 </div>
 ```
 
-- [ ] **Step 8: Create placeholder controllers so the tabs resolve**
+- [x] **Step 8: Create placeholder controllers so the tabs resolve**
 
 The tabs link to three routes whose controllers do not exist yet, which would 500 if clicked. Create minimal versions now; Tasks 5 and 7 fill in their views.
 
@@ -801,16 +803,16 @@ And a one-line placeholder view for each, at `app/views/admin/accounts/index.htm
 <div class="bg-white text-ink"><section class="max-w-7xl mx-auto px-6 py-16"></section></div>
 ```
 
-- [ ] **Step 9: Run the tests**
+- [x] **Step 9: Run the tests**
 
 Run: `bin/rails test test/integration/admin_authorization_test.rb`
 Expected: 3 runs, 0 failures.
 
-- [ ] **Step 10: Run the full suite and lint**
+- [x] **Step 10: Run the full suite and lint**
 
 Run: `bin/rails test test/ && bin/rubocop`
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add -A
