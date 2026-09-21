@@ -1009,7 +1009,7 @@ The one piece of real behaviour in this plan.
   - `RecordsPageViews` — concern; `include` it and an `after_action :record_page_view` is installed
   - `RecordsPageViews::BOT_PATTERN` — `Regexp` matched against the user agent
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `test/integration/page_view_recording_test.rb`:
 
@@ -1072,12 +1072,12 @@ class PageViewRecordingTest < ActionDispatch::IntegrationTest
 end
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bin/rails test test/integration/page_view_recording_test.rb`
 Expected: FAIL with `NameError: uninitialized constant PageView`.
 
-- [ ] **Step 3: Write the migration**
+- [x] **Step 3: Write the migration**
 
 Create `db/migrate/20260921130000_create_page_views.rb`:
 
@@ -1104,14 +1104,14 @@ end
 
 `account_id` is a plain integer rather than a foreign key on purpose: a page view should outlive the account that made it.
 
-- [ ] **Step 4: Run the migration in both environments**
+- [x] **Step 4: Run the migration in both environments**
 
 ```bash
 bin/rails db:migrate
 RAILS_ENV=test bin/rails db:migrate
 ```
 
-- [ ] **Step 5: Add the model**
+- [x] **Step 5: Add the model**
 
 Create `app/models/page_view.rb`:
 
@@ -1120,7 +1120,7 @@ class PageView < Sequel::Model
 end
 ```
 
-- [ ] **Step 6: Add the concern**
+- [x] **Step 6: Add the concern**
 
 Create `app/controllers/concerns/records_page_views.rb`:
 
@@ -1168,7 +1168,7 @@ module RecordsPageViews
 end
 ```
 
-- [ ] **Step 7: Include the concern**
+- [x] **Step 7: Include the concern**
 
 In `app/controllers/application_controller.rb`, add the include directly below `allow_browser`:
 
@@ -1176,18 +1176,22 @@ In `app/controllers/application_controller.rb`, add the include directly below `
   include RecordsPageViews
 ```
 
-- [ ] **Step 8: Run the tests**
+- [x] **Step 8: Run the tests**
 
 Run: `bin/rails test test/integration/page_view_recording_test.rb`
 Expected: 7 runs, 0 failures.
 
+**Correction applied during execution:** the last test needs `Object#stub`, which `rails/test_help` only loads along the ActiveRecord path this app does not take. `require "minitest/mock"` was added to `test/test_helper.rb`.
+
+Observed scope of collection, for Task 7's numbers: only requests that reach a controller are recorded. A signed-out visit to `/dashboard` is redirected by rodauth's middleware, and a non-superuser hitting `/admin` raises before `after_action` runs, so neither appears in the table.
+
 If the "signed in account is attributed" test fails with a `nil` `account_id`, check that `sign_in` actually succeeded — rodauth refuses unverified accounts, and `create_account` defaults to `status: 2` (verified) for exactly this reason.
 
-- [ ] **Step 9: Run the full suite and lint**
+- [x] **Step 9: Run the full suite and lint**
 
 Run: `bin/rails test test/ && bin/rubocop`
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add -A
