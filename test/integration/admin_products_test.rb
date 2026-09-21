@@ -173,4 +173,43 @@ class AdminProductsTest < ActionDispatch::IntegrationTest
     assert_redirected_to "/admin/products"
     assert Product.first(slug: "big-loud-shirt"), "expected a slug generated from the name"
   end
+
+  test "a non-numeric size price is rejected and writes nothing" do
+    sign_in create_account(superuser: true)
+
+    post "/admin/products", params: valid_params(prices: { "S" => "abc" })
+    assert_response :unprocessable_entity
+    assert_equal 0, Product.count
+    assert_equal 0, ProductVariant.count
+  end
+
+  test "a negative price is rejected rather than silently flipped" do
+    sign_in create_account(superuser: true)
+
+    post "/admin/products", params: valid_params(prices: { "S" => "-12.50" })
+    assert_response :unprocessable_entity
+    assert_equal 0, Product.count
+    assert_nil ProductVariant.first(price_cents: 1250), "a negative price must never be saved as 1250"
+  end
+
+  test "a non-numeric base price is rejected and writes nothing" do
+    sign_in create_account(superuser: true)
+
+    post "/admin/products", params: valid_params(product: { base_price: "abc" })
+    assert_response :unprocessable_entity
+    assert_equal 0, Product.count
+    assert_equal 0, ProductVariant.count
+  end
+
+  test "dollar signs and thousands commas are still accepted" do
+    sign_in create_account(superuser: true)
+
+    post "/admin/products", params: valid_params(product: { base_price: "$12.00" }, prices: { "2XL" => "1,200.00" })
+    assert_redirected_to "/admin/products"
+
+    product = Product.first(slug: "new-tee")
+    assert product, "the product should exist"
+    assert_equal 1200, product.base_price_cents
+    assert_equal 120_000, product.variants.find { |v| v.size == "2XL" && v.color == "Black" }.price_cents
+  end
 end

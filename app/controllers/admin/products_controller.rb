@@ -23,6 +23,11 @@ module Admin
         return render :new, status: :unprocessable_entity
       end
 
+      if @product.base_price_cents.nil? || @prices.value?(nil)
+        @product.errors.add(:base, "Prices must be amounts like 12.00")
+        return render :new, status: :unprocessable_entity
+      end
+
       unless @product.valid?
         return render :new, status: :unprocessable_entity
       end
@@ -102,13 +107,14 @@ module Admin
       product.refresh
     end
 
+    # Returns cents, or nil when the value is not a well-formed non-negative
+    # amount. Callers must treat nil as a validation failure, never as zero: a
+    # silently zeroed price would put a product in the shop for free.
     def cents(value)
-      digits = value.to_s.gsub(/[^0-9.]/, "")
-      return 0 if digits.blank?
+      text = value.to_s.strip.delete("$").delete(",")
+      return nil unless text.match?(/\A\d+(\.\d{1,2})?\z/)
 
-      (BigDecimal(digits) * 100).round
-    rescue ArgumentError
-      0
+      (BigDecimal(text) * 100).round
     end
   end
 end
