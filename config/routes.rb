@@ -19,5 +19,6 @@ Rails.application.routes.draw do
     get "accounts" => "accounts#index", as: :accounts
     get "orders"   => "orders#index",   as: :orders
     get "traffic"  => "traffic#index",  as: :traffic
+    resources :products, except: [ :show ]
   end
 end

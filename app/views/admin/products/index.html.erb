@@ -1,0 +1,56 @@
+<div class="bg-white text-ink">
+  <%= render "shared/page_header", heading_top: "ALL", heading_bottom: "PRODUCTS." %>
+
+  <%= render "admin/tabs" %>
+
+  <section class="max-w-7xl mx-auto px-6 py-12">
+    <%= render layout: "shared/panel", locals: { title: "Products", subtitle: "#{@products.size} total" } do %>
+      <div class="mb-6">
+        <%= link_to "New product", new_admin_product_path,
+              class: "inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-white font-bold text-sm tracking-wide uppercase px-6 py-3 rounded" %>
+      </div>
+
+      <% if @products.empty? %>
+        <%= render "shared/empty_state", message: "No products yet.", cta_label: "Add the first one", cta_path: new_admin_product_path %>
+      <% else %>
+        <%= render layout: "shared/data_table", locals: { headers: [ "", "Product", "Price", "Colours", "In stock", "Status", "" ] } do %>
+          <% @products.each do |product| %>
+            <tr>
+              <td class="py-3 pr-6">
+                <div class="w-10 h-10 rounded bg-gray-100 overflow-hidden flex items-center justify-center">
+                  <% if product.image.present? %>
+                    <%= image_tag product.image, alt: "", class: "w-full h-full object-cover" %>
+                  <% end %>
+                </div>
+              </td>
+              <td class="py-3 pr-6 font-bold"><%= product.name %></td>
+              <td class="py-3 pr-6 whitespace-nowrap">
+                <% low, high = product.price_range %>
+                <%= low == high ? price(low) : "#{price(low)} – #{price(high)}" %>
+              </td>
+              <td class="py-3 pr-6">
+                <div class="flex items-center gap-1">
+                  <% product.colors.each do |color| %>
+                    <span class="inline-block w-4 h-4 rounded-full border border-gray-300"
+                          style="background-color: <%= product.swatch_for(color) %>"
+                          title="<%= color %>"></span>
+                  <% end %>
+                </div>
+              </td>
+              <td class="py-3 pr-6 text-gray-600"><%= product.total_stock %></td>
+              <td class="py-3 pr-6">
+                <%= render "shared/status_badge",
+                      label: product.active? ? "Active" : "Draft",
+                      tone:  product.active? ? :green : :gray %>
+              </td>
+              <td class="py-3 text-right">
+                <%= link_to "Edit", edit_admin_product_path(product.id),
+                      class: "font-bold text-xs uppercase tracking-widest text-brand-green" %>
+              </td>
+            </tr>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+  </section>
+</div>
