@@ -1,9 +1,7 @@
 <div class="bg-white text-ink">
   <%= render "shared/page_header",
-        heading_top: @product.name.upcase,
-        heading_bottom: "$#{'%.2f' % (@product.price_range.first / 100.0)}." %>
-
-  <span style="display: none;"><%= @product.name %></span>
+        heading_top: @product.name,
+        heading_bottom: "#{price(@product.price_range.first)}." %>
 
   <section class="max-w-5xl mx-auto px-6 py-12 grid md:grid-cols-2 gap-10">
     <div class="aspect-square bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center">
