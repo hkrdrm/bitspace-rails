@@ -5,8 +5,8 @@
 
 ## Goal
 
-Give the shop real products. Add `products`, `product_variants` and
-`product_colors` tables with a Sequel model apiece, a read-only public catalog at `/shop`, full product
+Give the shop real products. Add `products` and `product_variants` tables with a
+Sequel model apiece, a read-only public catalog at `/shop`, full product
 management inside the existing `/admin` namespace, and sample shirts seeded from
 artwork already in the repo.
 
@@ -46,11 +46,22 @@ in a box.
 
 **Garment colour is an option, not a second pricing axis.** The same design can
 be offered on several garment colours, but a black 2XL and a white 2XL cost the
-same. Colours therefore live in their own `product_colors` table rather than
-multiplying the variant grid: three colours and six sizes produce nine rows, not
-eighteen. Variants stay keyed on size alone, so the price form keeps its six
-clean rows.
+same. Variants therefore stay keyed on size alone and the price form keeps its
+six clean rows.
 
+**Colours are a `jsonb` array on `products`, not a table.** A colour row would
+have had no independent identity: its name is validated against a code constant,
+its swatch and display order are derivable from that same constant, and nothing
+will ever hold a foreign key to it. A table whose every column is either derived
+or borrowed, that nothing references, is an expensive array.
+
+This is deliberately asymmetric with variants, and the asymmetry is the point.
+A variant carries `price_cents`, which is real per-row data that cannot be
+derived, and an order line item will eventually reference a specific variant by
+id. Colours carry neither property.
+
+`products.colors` holds an array of palette names. `NULL` means colour is not an
+option for this design; a populated array means those are the colours offered.
 Colours are drawn from a fixed shop palette (`Product::COLORS`) and selected with
 checkboxes, mirroring the decision above for sizes. A print shop stocks a known
 set of blanks, so a fixed palette is honest about reality and keeps the admin
@@ -90,38 +101,44 @@ Money is stored as integer cents everywhere. No floats, no decimals.
 | `position` | Integer | not null |
 | | | unique index on `[product_id, size]` |
 
-### `product_colors`
+### `products.colors`
 
-| Column | Type | Constraints |
-|---|---|---|
-| `id` | primary key | |
-| `product_id` | foreign key → `products` | not null, `on_delete: :cascade` |
-| `name` | String | not null, one of `Product::COLORS` keys |
-| `hex` | String | not null; swatch colour, copied from the palette on write |
-| `available` | TrueClass | not null, default `true` |
-| `position` | Integer | not null |
-| | | unique index on `[product_id, name]` |
+A `jsonb` column on `products`, nullable, holding an array of palette names:
 
-`hex` is denormalised out of the palette constant deliberately. Storing it means
-an existing product still renders its swatch correctly if the shop later retires
-or restyles a palette entry, rather than breaking on a lookup that no longer
-resolves.
+```json
+["Black", "White", "Heather Grey"]
+```
 
-A product with no colour rows is valid — its pages simply omit the colour
-selector. That is the expected shape for a design offered on one blank.
+**`NULL` means colour is not an option** for this design — its pages omit the
+colour selector entirely. A populated array means those colours are offered.
 
-A real foreign key with cascade delete on both child tables, unlike
+**`[]` is never stored.** An empty selection normalises to `NULL` on write, so
+there is exactly one representation of "no colours" and no ambiguity about what
+an empty array would have meant. This is enforced in the model, not left to
+callers.
+
+Swatch colour and display order are looked up from `Product::COLORS` at render
+time rather than stored. The palette is a Ruby constant in the same repository as
+the code reading it, so the two change together. A name with no palette entry
+renders a neutral swatch rather than raising, which keeps a retired palette entry
+from breaking an existing product page.
+
+There is no per-colour availability flag. A colour is offered or it is not, and
+removing it from the array says so. Sizes keep their `available` flag because a
+size can be temporarily out while remaining part of the product's normal range;
+a garment colour the shop no longer stocks is simply not offered.
+
+`product_variants` keeps a real foreign key with cascade delete, unlike
 `page_views.account_id`. The reasoning differs: a page view should outlive the
-account that made it, whereas a variant or colour is owned by its product and is
+account that made it, whereas a variant is owned by its product and is
 meaningless without it.
 
-`position` exists so the size ladder renders in size order rather than
-alphabetically, where `2XL` would sort before `S`, and so colours render in
-palette order rather than by name.
+`position` on variants exists so the size ladder renders in size order rather
+than alphabetically, where `2XL` would sort before `S`.
 
 ### Migration notes
 
-Sequel migration syntax, one migration creating all three tables:
+Sequel migration syntax, one migration creating both tables:
 
 ```ruby
 Sequel.migration do
@@ -134,6 +151,7 @@ Sequel.migration do
       String    :image
       Integer   :base_price_cents, null: false
       TrueClass :active, null: false, default: true
+      column    :colors, :jsonb          # nullable; array of Product::COLORS keys
       DateTime  :created_at, null: false
       DateTime  :updated_at, null: false
     end
@@ -148,23 +166,34 @@ Sequel.migration do
 
       index [ :product_id, :size ], unique: true
     end
-
-    create_table :product_colors do
-      primary_key :id
-      foreign_key :product_id, :products, null: false, on_delete: :cascade
-      String    :name, null: false
-      String    :hex, null: false
-      TrueClass :available, null: false, default: true
-      Integer   :position, null: false
-
-      index [ :product_id, :name ], unique: true
-    end
   end
 end
 ```
 
 Run in both environments (`bin/rails db:migrate` and `RAILS_ENV=test bin/rails
 db:migrate`) and commit the regenerated `db/schema.rb`.
+
+### Sequel must be told about jsonb
+
+**This is a prerequisite, not a detail.** Without Sequel's `pg_json` extension,
+a `jsonb` column reads back as a raw JSON *string*, silently — `product.colors`
+returns `"[\"Black\"]"` and `.include?("Black")` gives a substring match that
+happens to look right until it doesn't. Verified against this database:
+
+| | `product.colors` returns |
+|---|---|
+| without `pg_json` | `"[\"Black\", \"White\"]"` — a `String` |
+| with `pg_json` | `["Black", "White"]` — a `JSONBArray`, behaves like an Array |
+
+Add `config/initializers/sequel.rb`:
+
+```ruby
+Sequel::Model.db.extension :pg_json
+```
+
+There is no Sequel initializer in this app yet, so this creates one. Containment
+queries (`colors @> '["Black"]'`) work once it is loaded, should the catalog ever
+need filtering by colour.
 
 ## Models
 
@@ -183,7 +212,6 @@ class Product < Sequel::Model
   }.freeze
 
   one_to_many :variants, class: :ProductVariant, order: :position
-  one_to_many :colors,   class: :ProductColor,   order: :position
   plugin :validation_helpers
   plugin :timestamps, update_on_create: true
   plugin :boolean_readers
@@ -191,7 +219,13 @@ end
 ```
 
 Validations: `name` and `slug` present; `slug` unique and formatted
-`/\A[a-z0-9-]+\z/`; `base_price_cents` present and not negative.
+`/\A[a-z0-9-]+\z/`; `base_price_cents` present and not negative; every entry in
+`colors` (when not nil) is a key of `COLORS`.
+
+`Product#colors=` normalises a blank or empty selection to `nil` and sorts the
+remaining names into palette order, so storage has one canonical form and views
+never sort. `#swatch_for(name)` returns the palette hex or a neutral grey for an
+unrecognised name.
 
 ```ruby
 class ProductVariant < Sequel::Model
@@ -203,17 +237,6 @@ end
 
 Validations: `size` included in `Product::SIZES`; `price_cents` present and not
 negative; `[product_id, size]` unique.
-
-```ruby
-class ProductColor < Sequel::Model
-  many_to_one :product
-  plugin :validation_helpers
-  plugin :boolean_readers
-end
-```
-
-Validations: `name` included in `Product::COLORS` keys; `hex` present;
-`[product_id, name]` unique.
 
 `Product` gains two query helpers used by both the catalog and the admin list:
 
@@ -261,11 +284,11 @@ so an unpublished product 404s rather than leaking its existence.
 behaviour apply with no extra code. Actions: `index`, `new`, `create`, `edit`,
 `update`, `destroy`.
 
-`create` and `update` write the product, its six variants and its selected
-colours in a single transaction (`Product.db.transaction`), so a validation
-failure anywhere cannot leave a half-updated ladder or a partial colour list
-behind. Colour rows are reconciled against the submitted checkboxes: newly ticked
-palette entries are inserted, unticked ones are deleted. On failure they re-render the form
+`create` and `update` write the product and its six variants in a single
+transaction (`Product.db.transaction`), so a validation failure on one variant
+cannot leave a half-updated ladder behind. Colours need no reconciliation — the
+submitted checkbox names replace the `colors` column wholesale, which is most of
+the benefit of dropping the table. On failure they re-render the form
 with the submitted values and the model's errors.
 
 Parameters are read explicitly by key rather than mass-assigned.
@@ -284,6 +307,8 @@ or draft, and an edit link. `shared/empty_state` when there are no products.
 **`admin/products/_form`** — shared by `new` and `edit`. Name, slug, description,
 image filename with a live preview, base price, six fixed size rows, then the
 colour palette as a checkbox per entry with its swatch shown beside the name.
+Ticking none means colour is not an option for this design, which is stored as
+`NULL` rather than an empty array.
 Follows the app's form convention: `form_with ... data: { turbo: false }`.
 Validation errors render inline above the form.
 
@@ -302,8 +327,8 @@ never offered; unavailable colours get the same treatment.
 The colour selector is swatches labelled with their names, not swatches alone —
 colour is not a safe sole carrier of meaning for colourblind or screen reader
 users, and two of the palette entries (Heather Grey and Sand) are close enough in
-value to be hard to tell apart. A product with no colour rows omits the selector
-entirely rather than rendering an empty control.
+value to be hard to tell apart. A product whose `colors` is `NULL` omits the
+selector entirely rather than rendering an empty control.
 
 **Navigation** — a "Shop" link joins "Contact" in
 `app/views/layouts/partials/_navigation.html.erb`. A fifth "Products" tab joins
@@ -317,11 +342,11 @@ helper, used by every page that shows money.
 `db/seeds.rb`, idempotent on slug so re-running changes nothing. Three shirts
 built from artwork already in `app/assets/images/`:
 
-| Name | Slug | Image | S–XL | 2XL–3XL | Colours | Notes |
+| Name | Slug | Image | S–XL | 2XL–3XL | `colors` | Notes |
 |---|---|---|---|---|---|---|
-| 3 Crow | `3-crow` | `3crow.png` | $12.00 | $14.00 | Black, White, Heather Grey | all sizes available |
-| See That Shit | `see-that-shit` | `see_that_shit.png` | $12.00 | $14.00 | Black, Red | 3XL unavailable |
-| Third Eye Smiley | `third-eye-smiley` | `3rd_eye_smiley.png` | $12.00 | $14.00 | Black | single colour, exercises the no-selector path |
+| 3 Crow | `3-crow` | `3crow.png` | $12.00 | $14.00 | `["Black","White","Heather Grey"]` | all sizes available |
+| See That Shit | `see-that-shit` | `see_that_shit.png` | $12.00 | $14.00 | `["Black","Red"]` | 3XL unavailable |
+| Third Eye Smiley | `third-eye-smiley` | `3rd_eye_smiley.png` | $12.00 | $14.00 | `NULL` | no colour option; exercises the omitted-selector path |
 
 Pricing follows the homepage, which advertises $12 a shirt. One product ships
 with 3XL marked unavailable so the sold-out treatment on `/shop/:slug` is
@@ -339,10 +364,16 @@ themselves; there are no transactional tests. Every test that creates products
 deletes them in teardown.
 
 **Model tests** — slug uniqueness and format; `size` rejected when outside
-`Product::SIZES`; `name` rejected when outside `Product::COLORS`; negative prices
-rejected; cascade delete removes both variants and colours with their product;
+`Product::SIZES`; a colour name outside `Product::COLORS` rejected; negative
+prices rejected; cascade delete removes variants with their product;
 `price_range` across mixed variant prices, including the no-available-variants
 fallback.
+
+Colour storage gets its own tests, because a `jsonb` column is easier to get
+subtly wrong than a table: an empty selection round-trips as `nil` and never
+`[]`; a populated selection comes back as an **Array, not a String**, which is
+the failure mode when `pg_json` is not loaded; and names are stored in palette
+order regardless of submission order.
 
 **Admin authorization** — every product route (`index`, `new`, `create`, `edit`,
 `update`, `destroy`) redirects when signed out and 404s for a signed-in
@@ -351,8 +382,8 @@ that change state.
 
 **Admin CRUD** — a real round trip: create a product and assert the row, its six
 variants and its ticked colours exist; update it and assert the values changed,
-including that unticking a colour removes that row and ticking a new one adds it;
-delete it and assert the product, its variants and its colours are all gone.
+including that unticking every colour clears the column to `nil` and ticking a
+new one adds it; delete it and assert the product and its variants are gone.
 Invalid input re-renders the form and writes nothing.
 
 **Public catalog** — `/shop` lists active products and omits inactive ones;
@@ -389,7 +420,9 @@ operations. Multiple images per product — a design shown on a black tee still
 uses one photo regardless of which colour the customer picks, which is a real
 limitation worth revisiting once colours are in use. Per-colour pricing and
 per-colour stock, which is what a full size-by-colour variant grid would buy;
-colour is an option here, not a pricing axis.
+colour is an option here, not a pricing axis. Filtering or searching the catalog
+by colour — the `jsonb` containment query is available once `pg_json` is loaded,
+but no page offers it.
 
 ## Inherited constraints
 
