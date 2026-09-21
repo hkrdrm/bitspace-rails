@@ -13,14 +13,38 @@
     <div>
       <p class="text-gray-700"><%= @product.description %></p>
 
-      <div class="mt-8 space-y-8">
+      <div class="mt-8 space-y-8" data-controller="<%= "color-switcher" if @product.colors.many? %>">
+        <% if @product.colors.many? %>
+          <div class="flex flex-wrap gap-3">
+            <% @product.colors.each do |color| %>
+              <button type="button"
+                      data-color="<%= color %>"
+                      data-color-switcher-target="button"
+                      data-action="click->color-switcher#select"
+                      class="flex items-center gap-2 px-3 py-2 border-2 border-gray-200 rounded-lg text-sm font-bold">
+                <span class="inline-block w-4 h-4 rounded-full border border-gray-300"
+                      style="background-color: <%= @product.swatch_for(color) %>"></span>
+                <%= color %>
+              </button>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="flex items-center gap-3">
+            <span class="inline-block w-5 h-5 rounded-full border border-gray-300"
+                  style="background-color: <%= @product.swatch_for(@product.colors.first) %>"></span>
+            <span class="font-bold text-sm"><%= @product.colors.first %></span>
+          </div>
+        <% end %>
+
         <% @product.colors.each do |color| %>
-          <div data-color-section data-color="<%= color %>">
-            <div class="flex items-center gap-3">
-              <span class="inline-block w-6 h-6 rounded-full border border-gray-300"
-                    style="background-color: <%= @product.swatch_for(color) %>"></span>
-              <h2 class="font-display text-xl tracking-wide uppercase"><%= color %></h2>
-            </div>
+          <div data-color-section data-color="<%= color %>" data-color-switcher-target="section">
+            <% if @product.colors.many? %>
+              <div class="flex items-center gap-3">
+                <span class="inline-block w-6 h-6 rounded-full border border-gray-300"
+                      style="background-color: <%= @product.swatch_for(color) %>"></span>
+                <h2 class="font-display text-xl tracking-wide uppercase"><%= color %></h2>
+              </div>
+            <% end %>
 
             <ul class="mt-4 space-y-2">
               <% @product.variants_for(color).each do |variant| %>

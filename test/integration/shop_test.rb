@@ -83,4 +83,22 @@ class ShopTest < ActionDispatch::IntegrationTest
     get "/shop/draft"
     assert_response :not_found
   end
+
+  test "a multi colour product renders a colour switcher" do
+    create_product(slug: "switch", colors: [ "Black", "Red" ])
+
+    get "/shop/switch"
+    assert_select "[data-controller='color-switcher']"
+    assert_select "button[data-color='Black']"
+    assert_select "button[data-color='Red']"
+  end
+
+  test "a single colour product renders a label rather than a switcher" do
+    create_product(slug: "single", colors: [ "Black" ])
+
+    get "/shop/single"
+    assert_select "[data-controller='color-switcher']", count: 0
+    assert_select "button[data-color]", count: 0
+    assert_select "body", text: /Black/
+  end
 end
