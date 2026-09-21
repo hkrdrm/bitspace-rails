@@ -1695,7 +1695,7 @@ those already work; addresses and payment methods are placeholders."
 - Consumes: everything from Task 8.
 - Produces: no new interfaces. The checkout page establishes one convention later work depends on — a `<div id="payment-element" data-stripe-mount>` where Stripe Elements will mount.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `test/integration/dashboard_pages_test.rb`:
 
@@ -1729,12 +1729,12 @@ end
 
 Note the `h2` assertions match the uppercase text rendered by `shared/_panel`, which applies `uppercase` as a CSS class — so the assertion must match the source text, not the rendered casing. Pass the titles in as already-uppercase strings (`title: "Order summary"` would fail this assertion). The view below passes `"ORDER SUMMARY"`, `"SHIPPING"`, `"PAYMENT"` verbatim.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bin/rails test test/integration/dashboard_pages_test.rb`
 Expected: all three FAIL — both views are the empty placeholders from Task 8.
 
-- [ ] **Step 3: Build the orders page**
+- [x] **Step 3: Build the orders page**
 
 Replace `app/views/dashboard/orders.html.erb`:
 
@@ -1773,7 +1773,7 @@ Replace `app/views/dashboard/orders.html.erb`:
 </div>
 ```
 
-- [ ] **Step 4: Build the checkout page**
+- [x] **Step 4: Build the checkout page**
 
 Replace `app/views/dashboard/checkout.html.erb`:
 
@@ -1907,21 +1907,24 @@ Replace `app/views/dashboard/checkout.html.erb`:
 </div>
 ```
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `bin/rails test test/integration/dashboard_pages_test.rb`
 Expected: 3 runs, 0 failures.
 
-- [ ] **Step 6: Run the full suite and lint**
+- [x] **Step 6: Run the full suite and lint**
 
 Run: `bin/rails test test/ && bin/rubocop`
 Expected: whole suite green.
 
 - [ ] **Step 7: Verify every page renders in a browser**
 
+**Not done — requires a real terminal, and the prerequisite changed.** `bitspace_dev` was created during Task 2 and is empty, so the line below updates zero rows. Create an account through `/create-account` first (the grace period lets you sign in before verifying), then promote it:
+
 ```bash
-bin/rails runner 'Account.where(email: "zerosum022@gmail.com").update(superuser: true)'
-bin/dev
+# 1. bin/dev, then sign up at /create-account
+# 2. promote that account:
+bin/rails runner 'Account.where(email: "you@example.com").update(superuser: true)'
 ```
 
 Visit each of the following and check the layout at desktop width and at 390px:
@@ -1929,7 +1932,7 @@ Visit each of the following and check the layout at desktop width and at 390px:
 
 `bin/dev` must be run in a real terminal — its Tailwind watcher exits immediately without a TTY and takes the server down with it. This run is also what compiles the new utility classes these pages introduce.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add -A
