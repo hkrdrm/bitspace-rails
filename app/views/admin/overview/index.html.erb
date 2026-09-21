@@ -1,0 +1,35 @@
+<div class="bg-white text-ink">
+  <%= render "shared/page_header",
+        heading_top: "STUDIO",
+        heading_bottom: "CONTROL.",
+        lede: "Everything behind the counter." %>
+
+  <%= render "admin/tabs" %>
+
+  <section class="max-w-7xl mx-auto px-6 py-12 space-y-10">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <%= render "shared/stat_tile", label: "Accounts",  value: "128", delta: "+6 this week" %>
+      <%= render "shared/stat_tile", label: "Verified",  value: "104" %>
+      <%= render "shared/stat_tile", label: "Orders",    value: "42",  delta: "+3 this week" %>
+      <%= render "shared/stat_tile", label: "Revenue",   value: "$1,860" %>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-8">
+      <%= render layout: "shared/panel", locals: { title: "Traffic", subtitle: "Last 7 days" } do %>
+        <p class="text-sm text-gray-600">
+          Page views are being recorded. See the
+          <%= link_to "traffic page", admin_traffic_path, class: "font-bold text-brand-green underline decoration-2 underline-offset-4" %>
+          for the breakdown.
+        </p>
+      <% end %>
+
+      <%= render layout: "shared/panel", locals: { title: "Recent activity" } do %>
+        <ul class="space-y-3 text-sm text-gray-700">
+          <li class="flex justify-between gap-4"><span>New account registered</span><span class="text-gray-400">2h ago</span></li>
+          <li class="flex justify-between gap-4"><span>Order #1042 marked shipped</span><span class="text-gray-400">5h ago</span></li>
+          <li class="flex justify-between gap-4"><span>Order #1041 paid</span><span class="text-gray-400">Yesterday</span></li>
+        </ul>
+      <% end %>
+    </div>
+  </section>
+</div>

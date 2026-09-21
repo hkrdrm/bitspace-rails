@@ -8,4 +8,11 @@ Rails.application.routes.draw do
 
   get "contact"   => "home#contact",    as: :contact
   get "dashboard" => "dashboard#index", as: :dashboard
+
+  namespace :admin do
+    root "overview#index"
+    get "accounts" => "accounts#index", as: :accounts
+    get "orders"   => "orders#index",   as: :orders
+    get "traffic"  => "traffic#index",  as: :traffic
+  end
 end
