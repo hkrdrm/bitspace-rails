@@ -6,7 +6,7 @@
 
     <div class="hidden md:flex flex-row items-center gap-8 font-bold text-sm tracking-wider uppercase">
       <span>Services</span>
-      <span>Store</span>
+      <span><%= link_to "Shop", shop_path %></span>
       <span><%= link_to "Portfolio", "https://my-portfolio-sooty-one-83.vercel.app/" %></span>
       <span>About</span>
       <span><%= link_to "Contact", contact_path %></span>
@@ -30,7 +30,7 @@
 
   <div data-mobile-menu-target="menu" class="hidden md:hidden px-8 pb-4 font-bold text-sm tracking-wider uppercase">
     <span class="block py-2 border-b border-white/10">Services</span>
-    <span class="block py-2 border-b border-white/10">Store</span>
+    <span class="block py-2 border-b border-white/10"><%= link_to "Shop", shop_path %></span>
     <span class="block py-2 border-b border-white/10"><%= link_to "Portfolio", "https://my-portfolio-sooty-one-83.vercel.app/" %></span>
     <span class="block py-2 border-b border-white/10">About</span>
     <span class="block py-2 border-b border-white/10"><%= link_to "Contact", contact_path %></span>
