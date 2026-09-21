@@ -70,4 +70,107 @@ class AdminProductsTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "table", count: 0
   end
+
+  def valid_params(overrides = {})
+    {
+      product: {
+        name: "New Tee", slug: "new-tee", description: "Fresh.",
+        image: "3crow.png", base_price: "12.00", active: "1"
+      },
+      colors: [ "Black", "White" ],
+      prices: { "S" => "12.00", "M" => "12.00", "L" => "12.00",
+                "XL" => "12.00", "2XL" => "14.00", "3XL" => "14.00" },
+      stock: {
+        "Black" => { "S" => "5", "M" => "6", "L" => "7", "XL" => "0", "2XL" => "1", "3XL" => "0" },
+        "White" => { "S" => "2", "M" => "3", "L" => "4", "XL" => "0", "2XL" => "0", "3XL" => "0" }
+      }
+    }.deep_merge(overrides)
+  end
+
+  test "the new form renders for a superuser" do
+    sign_in create_account(superuser: true)
+
+    get "/admin/products/new"
+    assert_response :success
+    assert_select "form"
+    assert_select "input[name='colors[]']", count: Product::COLORS.size
+    assert_select "input[name='prices[S]']"
+    assert_select "input[name='stock[Black][S]']"
+  end
+
+  test "creating a product builds the whole variant grid" do
+    sign_in create_account(superuser: true)
+
+    post "/admin/products", params: valid_params
+    assert_redirected_to "/admin/products"
+
+    product = Product.first(slug: "new-tee")
+    assert product, "the product should exist"
+    assert_equal 12, product.variants.count, "two colours by six sizes"
+    assert_equal [ "Black", "White" ], product.colors
+    assert_equal 1200, product.base_price_cents
+  end
+
+  test "prices are applied to every colour of a size" do
+    sign_in create_account(superuser: true)
+    post "/admin/products", params: valid_params
+
+    product = Product.first(slug: "new-tee")
+    assert_equal 1400, product.variants.find { |v| v.size == "2XL" && v.color == "Black" }.price_cents
+    assert_equal 1400, product.variants.find { |v| v.size == "2XL" && v.color == "White" }.price_cents
+    assert_equal 1200, product.variants.find { |v| v.size == "S" && v.color == "White" }.price_cents
+  end
+
+  test "stock is stored per cell" do
+    sign_in create_account(superuser: true)
+    post "/admin/products", params: valid_params
+
+    product = Product.first(slug: "new-tee")
+    assert_equal 5, product.stock_for(size: "S", color: "Black")
+    assert_equal 2, product.stock_for(size: "S", color: "White")
+    assert_equal 0, product.stock_for(size: "XL", color: "Black")
+  end
+
+  test "sizes are stored in ladder order" do
+    sign_in create_account(superuser: true)
+    post "/admin/products", params: valid_params
+
+    product = Product.first(slug: "new-tee")
+    assert_equal Product::SIZES, product.variants_for("Black").map(&:size)
+  end
+
+  test "creating without a colour re-renders and writes nothing" do
+    sign_in create_account(superuser: true)
+
+    post "/admin/products", params: valid_params(colors: [])
+    assert_response :unprocessable_entity
+    assert_equal 0, Product.count
+    assert_select "body", text: /at least one colour/i
+  end
+
+  test "an invalid product re-renders and writes nothing" do
+    sign_in create_account(superuser: true)
+
+    post "/admin/products", params: valid_params(product: { name: "" })
+    assert_response :unprocessable_entity
+    assert_equal 0, Product.count
+    assert_equal 0, ProductVariant.count, "no variants should be left behind"
+  end
+
+  test "a duplicate slug re-renders rather than raising" do
+    create_product(slug: "taken")
+    sign_in create_account(superuser: true)
+
+    post "/admin/products", params: valid_params(product: { slug: "taken" })
+    assert_response :unprocessable_entity
+    assert_equal 1, Product.count
+  end
+
+  test "the slug is derived from the name when left blank" do
+    sign_in create_account(superuser: true)
+
+    post "/admin/products", params: valid_params(product: { name: "Big Loud Shirt", slug: "" })
+    assert_redirected_to "/admin/products"
+    assert Product.first(slug: "big-loud-shirt"), "expected a slug generated from the name"
+  end
 end
