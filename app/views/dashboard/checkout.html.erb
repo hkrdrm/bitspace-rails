@@ -1,1 +1,127 @@
-<div class="bg-white text-ink"><section class="max-w-7xl mx-auto px-6 py-16"></section></div>
+<div class="bg-white text-ink">
+  <%= render "shared/page_header", heading_top: "YOUR", heading_bottom: "CHECKOUT." %>
+
+  <%= render "dashboard/tabs" %>
+
+  <section class="max-w-3xl mx-auto px-6 py-12 space-y-8">
+
+    <%# ---------- 1. Order summary ---------- %>
+    <%= render layout: "shared/panel", locals: { title: "ORDER SUMMARY" } do %>
+      <ul class="space-y-4">
+        <% [ [ "Bitspace Classic Tee", "Black / L", 2, "$24.00" ],
+             [ "Studio Poster", "18x24", 1, "$18.00" ],
+             [ "Sticker Pack", "Assorted", 1, "$12.00" ] ].each do |name, variant, qty, line_total| %>
+          <li class="flex items-center gap-4">
+            <div class="w-14 h-14 rounded-lg bg-gray-100 shrink-0"></div>
+            <div class="flex-1">
+              <div class="font-bold text-sm"><%= name %></div>
+              <div class="text-xs text-gray-500"><%= variant %> &middot; Qty <%= qty %></div>
+            </div>
+            <div class="font-bold text-sm whitespace-nowrap"><%= line_total %></div>
+          </li>
+        <% end %>
+      </ul>
+
+      <dl class="mt-6 pt-6 border-t-2 border-brand-green/30 space-y-2 text-sm">
+        <div class="flex justify-between"><dt class="text-gray-600">Subtotal</dt><dd>$54.00</dd></div>
+        <div class="flex justify-between"><dt class="text-gray-600">Shipping</dt><dd>$6.00</dd></div>
+        <div class="flex justify-between"><dt class="text-gray-600">Tax</dt><dd>$4.20</dd></div>
+        <div class="flex justify-between pt-2 border-t border-gray-200 font-display text-xl">
+          <dt>TOTAL</dt><dd>$64.20</dd>
+        </div>
+      </dl>
+    <% end %>
+
+    <%# ---------- 2. Shipping ---------- %>
+    <%= render layout: "shared/panel", locals: { title: "SHIPPING" } do %>
+      <div class="space-y-3">
+        <% [ [ "Home", "114 Main St, McComb, MS 39648", true ],
+             [ "Studio", "22 Delaware Ave, McComb, MS 39648", false ] ].each_with_index do |(name, line, checked), i| %>
+          <label class="flex items-start gap-3 p-4 border-2 <%= checked ? "border-brand-green" : "border-gray-200" %> rounded-lg cursor-pointer">
+            <input type="radio" name="shipping_address" class="mt-1 accent-brand-green" <%= "checked" if checked %>>
+            <span>
+              <span class="block font-bold text-sm"><%= name %></span>
+              <span class="block mt-1 text-sm text-gray-600"><%= line %></span>
+            </span>
+          </label>
+        <% end %>
+      </div>
+
+      <details class="mt-6 group">
+        <summary class="cursor-pointer font-bold text-sm uppercase tracking-wide text-brand-green underline decoration-2 underline-offset-4">
+          Add a new address
+        </summary>
+        <div class="mt-6 grid sm:grid-cols-2 gap-4">
+          <% [ [ "Full name", "name", "sm:col-span-2" ],
+               [ "Street address", "line1", "sm:col-span-2" ],
+               [ "Apartment, suite (optional)", "line2", "sm:col-span-2" ],
+               [ "City", "city", "" ],
+               [ "State", "state", "" ],
+               [ "ZIP code", "zip", "" ],
+               [ "Country", "country", "" ] ].each do |field_label, field_name, span| %>
+            <div class="<%= span %>">
+              <label for="ship_<%= field_name %>" class="block text-xs font-bold uppercase tracking-widest text-gray-500"><%= field_label %></label>
+              <input id="ship_<%= field_name %>" name="ship_<%= field_name %>" type="text"
+                     class="mt-2 w-full px-3 py-2 text-sm text-ink bg-white border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-brand-green focus:ring-brand-green/40">
+            </div>
+          <% end %>
+        </div>
+      </details>
+    <% end %>
+
+    <%# ---------- 3. Payment ---------- %>
+    <%= render layout: "shared/panel", locals: { title: "PAYMENT" } do %>
+      <div class="space-y-3">
+        <label class="flex items-start gap-3 p-4 border-2 border-brand-green rounded-lg cursor-pointer">
+          <input type="radio" name="payment_method" class="mt-1 accent-brand-green" checked>
+          <span>
+            <span class="block font-bold text-sm">Visa ending 4242</span>
+            <span class="block mt-1 text-sm text-gray-600">Expires 04/29</span>
+          </span>
+        </label>
+      </div>
+
+      <details class="mt-6">
+        <summary class="cursor-pointer font-bold text-sm uppercase tracking-wide text-brand-green underline decoration-2 underline-offset-4">
+          Pay with a new card
+        </summary>
+
+        <%# Stripe Elements mounts into #payment-element. The inputs below are
+            placeholder markup so the panel looks complete now; wiring Stripe
+            replaces this div's contents and nothing around it. %>
+        <div id="payment-element" data-stripe-mount class="mt-6 grid sm:grid-cols-2 gap-4">
+          <div class="sm:col-span-2">
+            <label for="card_number" class="block text-xs font-bold uppercase tracking-widest text-gray-500">Card number</label>
+            <input id="card_number" name="card_number" type="text" inputmode="numeric" autocomplete="cc-number" placeholder="4242 4242 4242 4242"
+                   class="mt-2 w-full px-3 py-2 text-sm text-ink bg-white border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-brand-green focus:ring-brand-green/40">
+          </div>
+          <div>
+            <label for="card_expiry" class="block text-xs font-bold uppercase tracking-widest text-gray-500">Expiry</label>
+            <input id="card_expiry" name="card_expiry" type="text" autocomplete="cc-exp" placeholder="MM / YY"
+                   class="mt-2 w-full px-3 py-2 text-sm text-ink bg-white border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-brand-green focus:ring-brand-green/40">
+          </div>
+          <div>
+            <label for="card_cvc" class="block text-xs font-bold uppercase tracking-widest text-gray-500">CVC</label>
+            <input id="card_cvc" name="card_cvc" type="text" inputmode="numeric" autocomplete="cc-csc" placeholder="123"
+                   class="mt-2 w-full px-3 py-2 text-sm text-ink bg-white border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-brand-green focus:ring-brand-green/40">
+          </div>
+        </div>
+      </details>
+
+      <label class="mt-6 flex items-center gap-3 text-sm text-gray-700">
+        <input type="checkbox" class="accent-brand-green" checked>
+        Billing address is the same as shipping
+      </label>
+    <% end %>
+
+    <%# ---------- Place order ---------- %>
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div class="font-display text-2xl">TOTAL $64.20</div>
+      <button type="button" disabled
+              class="inline-flex items-center justify-center gap-2 bg-brand-green text-white font-bold text-sm tracking-wide uppercase px-8 py-3 rounded opacity-50 cursor-not-allowed">
+        Place order <span aria-hidden="true">&rarr;</span>
+      </button>
+    </div>
+    <p class="text-xs text-gray-500 text-center">Checkout is not wired up yet.</p>
+  </section>
+</div>
