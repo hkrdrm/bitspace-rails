@@ -1,5 +1,8 @@
-<div class="flex-1 space-y-4">
-  <%== rodauth.login_form_header %>
+<%= render layout: "shared/auth_page", locals: {
+      heading_top: "WELCOME",
+      heading_bottom: "BACK.",
+      lede: "Sign in to your Bitspace Studio account.",
+      footer: rodauth.login_form_footer
+    } do %>
   <%= render "login_form" %>
-  <%== rodauth.login_form_footer %>
-</div>
+<% end %>
