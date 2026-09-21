@@ -1434,7 +1434,7 @@ user agents, with an empty state before any traffic lands."
   - `dashboard_path`, `dashboard_account_path`, `dashboard_orders_path`, `dashboard_checkout_path`
   - `dashboard/_tabs` partial — no locals
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `test/integration/dashboard_authorization_test.rb`:
 
@@ -1470,12 +1470,12 @@ class DashboardAuthorizationTest < ActionDispatch::IntegrationTest
 end
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bin/rails test test/integration/dashboard_authorization_test.rb`
 Expected: FAIL — `/dashboard/account` and the others are not routed, and `/dashboard` currently renders for signed-out visitors.
 
-- [ ] **Step 3: Add the routes**
+- [x] **Step 3: Add the routes**
 
 In `config/routes.rb`, replace the single `dashboard` line with:
 
@@ -1486,7 +1486,7 @@ In `config/routes.rb`, replace the single `dashboard` line with:
   get "dashboard/checkout" => "dashboard#checkout", as: :dashboard_checkout
 ```
 
-- [ ] **Step 4: Write the controller**
+- [x] **Step 4: Write the controller**
 
 Replace `app/controllers/dashboard_controller.rb`:
 
@@ -1508,7 +1508,7 @@ class DashboardController < ApplicationController
 end
 ```
 
-- [ ] **Step 5: Add the dashboard tabs partial**
+- [x] **Step 5: Add the dashboard tabs partial**
 
 Create `app/views/dashboard/_tabs.html.erb`:
 
@@ -1523,7 +1523,7 @@ Create `app/views/dashboard/_tabs.html.erb`:
       ] %>
 ```
 
-- [ ] **Step 6: Build the overview page**
+- [x] **Step 6: Build the overview page**
 
 Replace `app/views/dashboard/index.html.erb`:
 
@@ -1575,7 +1575,7 @@ Replace `app/views/dashboard/index.html.erb`:
 </div>
 ```
 
-- [ ] **Step 7: Build the account page**
+- [x] **Step 7: Build the account page**
 
 Create `app/views/dashboard/account.html.erb`:
 
@@ -1655,7 +1655,7 @@ Create `app/views/dashboard/account.html.erb`:
 </div>
 ```
 
-- [ ] **Step 8: Add placeholder views for the remaining two routes**
+- [x] **Step 8: Add placeholder views for the remaining two routes**
 
 So the tabs do not 500 before Task 9. Create `app/views/dashboard/orders.html.erb` and `app/views/dashboard/checkout.html.erb`, each containing:
 
@@ -1663,16 +1663,16 @@ So the tabs do not 500 before Task 9. Create `app/views/dashboard/orders.html.er
 <div class="bg-white text-ink"><section class="max-w-7xl mx-auto px-6 py-16"></section></div>
 ```
 
-- [ ] **Step 9: Run the tests**
+- [x] **Step 9: Run the tests**
 
 Run: `bin/rails test test/integration/dashboard_authorization_test.rb`
 Expected: 3 runs, 0 failures.
 
-- [ ] **Step 10: Run the full suite and lint**
+- [x] **Step 10: Run the full suite and lint**
 
 Run: `bin/rails test test/ && bin/rubocop`
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add -A
