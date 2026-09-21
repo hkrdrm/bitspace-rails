@@ -20,6 +20,19 @@ Sequel.migration do
       column :deleted_at, "timestamp without time zone"
     end
     
+    create_table(:page_views) do
+      primary_key :id
+      column :path, "text", :null=>false
+      column :ip, "text"
+      column :user_agent, "text"
+      column :bot, "boolean", :default=>false, :null=>false
+      column :account_id, "integer"
+      column :created_at, "timestamp without time zone", :null=>false
+      
+      index [:bot]
+      index [:created_at]
+    end
+    
     create_table(:schema_migrations) do
       column :filename, "text", :null=>false
       
@@ -84,5 +97,6 @@ end
                   self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('20250513161713_create_rodauth.rb')"
 self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('20250513172418_create_comics_and_issues.rb')"
 self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('20260921120000_add_superuser_to_accounts.rb')"
+self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('20260921130000_create_page_views.rb')"
                 end
               end

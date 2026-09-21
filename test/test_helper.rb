@@ -1,6 +1,9 @@
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
+# rails/test_help only pulls in minitest/mock along the ActiveRecord path, which
+# this app does not load, so Object#stub would be undefined without this.
+require "minitest/mock"
 
 module ActiveSupport
   class TestCase
