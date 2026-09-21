@@ -13,11 +13,12 @@
 ## Global Constraints
 
 - **This app uses Sequel, not ActiveRecord.** Models subclass `Sequel::Model`. Migrations are `Sequel.migration do change do ... end end`. Query with `Account.where(...)`, `dataset.delete`, `select_map`. There is no `ApplicationRecord`.
-- **Tests are not transactional.** `use_transactional_tests` is an ActiveRecord feature and does nothing here. Every test must clean up rows it creates. `fixtures :all` is commented out in `test/test_helper.rb` — do not enable it; the YAML fixtures are dead ActiveRecord leftovers.
+- **Tests are not transactional.** `use_transactional_tests` is an ActiveRecord feature and does nothing here. Every test must clean up rows it creates. The YAML fixtures in `test/fixtures/` are dead ActiveRecord leftovers — do not enable them.
+- **The AR fixture lifecycle is neutralized in `test/test_helper.rb` (done in Task 1).** `ActiveRecord::Base` is a defined constant here (solid_cache, solid_queue, solid_cable, ActionText, ActiveStorage and ActionMailbox all require it) even though `active_record/railtie` is not loaded and AR has no connection. That is enough for `rails/test_help` to mix `ActiveRecord::TestFixtures` into every test case, whose `setup_fixtures` hook then raises `ActiveRecord::ConnectionNotDefined` in `before_setup`. Commenting out `fixtures :all` does **not** prevent this. Do not remove the `setup_fixtures`/`teardown_fixtures` overrides.
 - **Style tokens** (defined in `app/assets/tailwind/application.css`, use these exact names): `font-display` (Anton), `text-ink` / `bg-ink` (`#0d1114`), `brand-green` (`#5c7a1e`), `brand-green-dark` (`#4a621a`), `brand-orange` (`#dd440c`).
 - **Page chrome convention:** every page wraps content in `<div class="bg-white text-ink">` because `body` is `bg-gray-900 text-white` in the layout.
 - **Do not run `bin/rails tailwindcss:build`.** The `bin/dev` watcher handles CSS rebuilds. New utility classes appear after the next `bin/dev` run.
-- **Test command:** `bin/rails test` for all, `bin/rails test path/to/file.rb -n test_name` for one. CI runs `bin/rails db:migrate test test:system`.
+- **Test command:** `bin/rails test test/` for all, `bin/rails test path/to/file.rb -n test_name` for one. Use `bin/rails test test/` and **not** bare `bin/rails test`: the bare form triggers sequel-rails' test-database maintenance, which tries to drop and recreate the database through `template1`. The test database lives on the DigitalOcean managed cluster, which rejects that (`pg_hba.conf`), so the bare command aborts before running anything. CI runs `bin/rails db:migrate test test:system`.
 - **Migrations:** after writing one, run `bin/rails db:migrate` and `RAILS_ENV=test bin/rails db:migrate`. `db/schema.rb` is generated — commit the regenerated file, never hand-edit it.
 - **Lint:** `bin/rubocop` (rubocop-rails-omakase) runs in CI. Run it before each commit.
 - **Views only.** Orders, carts, products, addresses, and payment methods have no models and no persistence. Every figure, row, and badge on those pages is hardcoded placeholder markup. The single exception is Task 6's traffic collector.
@@ -45,7 +46,7 @@ Note: `app/javascript/controllers/index.js` uses `eagerLoadControllersFrom`, whi
 
 The `comics` and `comic_issues` tables and their migration (`db/migrate/20250513172418_create_comics_and_issues.rb`) **stay**. Do not write a drop migration and do not edit that file.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `test/integration/removed_routes_test.rb`:
 
@@ -66,9 +67,16 @@ class RemovedRoutesTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  # RodauthApp gates every path starting with "/dashboard" in middleware, ahead of
+  # Rails routing, so an unauthenticated request to a removed dashboard path
+  # redirects to /login and can never surface as a 404. Assert against the router
+  # itself, which is what "the route is gone" actually means.
   test "new_issue route is gone" do
-    get "/dashboard/new_issue"
-    assert_response :not_found
+    assert_routing_error "/dashboard/new_issue"
+    assert_routing_error "/dashboard/create_issue", method: :post
+
+    assert_equal({ controller: "dashboard", action: "index" },
+      Rails.application.routes.recognize_path("/dashboard", method: :get))
   end
 
   test "home page still renders" do
@@ -80,15 +88,24 @@ class RemovedRoutesTest < ActionDispatch::IntegrationTest
     get "/contact"
     assert_response :success
   end
+
+  private
+    def assert_routing_error(path, method: :get)
+      assert_raises(ActionController::RoutingError, "expected no route for #{method.to_s.upcase} #{path}") do
+        Rails.application.routes.recognize_path(path, method: method)
+      end
+    end
 end
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bin/rails test test/integration/removed_routes_test.rb`
-Expected: the three "route is gone" tests FAIL with `Expected response to be a <404: Not Found>, but was a <200: OK>` (or a 500 from `Issue`/`Comic` lookups). The two "still renders" tests pass.
+Expected: the three "route is gone" tests FAIL (comics 200, issues 406, dashboard routing assertion) and the two "still renders" tests pass.
 
-- [ ] **Step 3: Delete the files**
+Note: this is also where the ActiveRecord fixture problem surfaces. Before the `test/test_helper.rb` fix described in Global Constraints, all five tests error with `ActiveRecord::ConnectionNotDefined` in `before_setup` instead. Fix the helper first, then re-run.
+
+- [x] **Step 3: Delete the files**
 
 ```bash
 cd /home/zerosum/workspace/bitspace-rails
@@ -100,7 +117,7 @@ git rm app/javascript/controllers/issue_controller.js
 git rm app/javascript/controllers/dashboard_controller.js
 ```
 
-- [ ] **Step 4: Trim the routes file**
+- [x] **Step 4: Trim the routes file**
 
 Replace `config/routes.rb` with:
 
@@ -118,7 +135,7 @@ Rails.application.routes.draw do
 end
 ```
 
-- [ ] **Step 5: Trim the dashboard controller**
+- [x] **Step 5: Trim the dashboard controller**
 
 Replace `app/controllers/dashboard_controller.rb` with:
 
@@ -129,7 +146,7 @@ class DashboardController < ApplicationController
 end
 ```
 
-- [ ] **Step 6: Replace the placeholder dashboard view**
+- [x] **Step 6: Replace the placeholder dashboard view**
 
 `app/views/dashboard/index.html.erb` currently wires a deleted Stimulus controller. Replace it with a minimal on-brand stub; Task 8 fills it in properly:
 
@@ -141,17 +158,17 @@ end
 </div>
 ```
 
-- [ ] **Step 7: Run the tests**
+- [x] **Step 7: Run the tests**
 
 Run: `bin/rails test test/integration/removed_routes_test.rb`
 Expected: 5 tests, 5 assertions groups passing, 0 failures.
 
-- [ ] **Step 8: Run the full suite and lint**
+- [x] **Step 8: Run the full suite and lint**
 
 Run: `bin/rails test && bin/rubocop`
 Expected: no failures, no offenses.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add -A
@@ -1934,6 +1951,7 @@ Checked against the spec:
 Two places this plan corrects the spec:
 
 1. The spec says the Stimulus controller registration in `app/javascript/controllers/index.js` must be edited. It must not — that file uses `eagerLoadControllersFrom`, which discovers controllers from the importmap automatically. Deleting the files is the whole job.
-2. The spec leaves `test/fixtures/sample_posts.yml` conditional on whether it references comics or issues. It does not — it is a generic `title`/`body` scaffold leftover for a `Post` model that never existed. It is out of scope and stays; `fixtures :all` is commented out, so nothing loads it.
+2. The spec leaves `test/fixtures/sample_posts.yml` conditional on whether it references comics or issues. It does not — it is a generic `title`/`body` scaffold leftover for a `Post` model that never existed. It is out of scope and stays.
+   **Corrected during Task 1:** the reasoning given here ("`fixtures :all` is commented out, so nothing loads it") was wrong. `ActiveRecord::TestFixtures#setup_fixtures` loads fixtures unconditionally and raises `ActiveRecord::ConnectionNotDefined` before any test body runs. See the Global Constraints entry above; Task 1 fixes this in `test/test_helper.rb`.
 
 One thing the spec did not anticipate, added here: `test/test_helper.rb` sets `parallelize(workers: :number_of_processors)`. Rails provisions a database per worker for ActiveRecord only, so Sequel-backed parallel workers would share one database and collide. Task 2 drops it to a single worker.
