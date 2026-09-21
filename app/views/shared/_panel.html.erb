@@ -1,0 +1,16 @@
+<%
+  title    = local_assigns[:title]
+  subtitle = local_assigns[:subtitle]
+%>
+<div class="border-2 border-brand-green rounded-xl p-6 md:p-8">
+  <% if title.present? %>
+    <div class="mb-6">
+      <h2 class="font-display text-2xl tracking-wide uppercase text-black"><%= title %></h2>
+      <% if subtitle.present? %>
+        <p class="mt-1 text-sm text-gray-600"><%= subtitle %></p>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%= yield %>
+</div>

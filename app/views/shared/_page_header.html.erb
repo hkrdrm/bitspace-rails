@@ -1,0 +1,14 @@
+<%
+  lede = local_assigns[:lede]
+%>
+<section class="max-w-4xl mx-auto px-6 pt-12 pb-10 md:pt-16 text-center">
+  <h1 class="font-display text-5xl md:text-6xl leading-[0.95] tracking-tight">
+    <span class="block text-black"><%= heading_top %></span>
+    <span class="block text-brand-green"><%= heading_bottom %></span>
+  </h1>
+  <% if lede.present? %>
+    <p class="mt-6 text-lg text-gray-700 max-w-md mx-auto"><%= lede %></p>
+  <% end %>
+</section>
+
+<%= render "shared/section_divider" %>

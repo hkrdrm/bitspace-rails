@@ -1,0 +1,14 @@
+<div class="overflow-x-auto">
+  <table class="w-full text-left text-sm">
+    <thead>
+      <tr class="border-b-2 border-brand-green">
+        <% headers.each do |header| %>
+          <th class="py-3 pr-6 text-xs font-bold uppercase tracking-widest text-gray-500 whitespace-nowrap"><%= header %></th>
+        <% end %>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200">
+      <%= yield %>
+    </tbody>
+  </table>
+</div>

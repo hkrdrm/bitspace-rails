@@ -1,21 +1,12 @@
 <%
-  lede   = local_assigns[:lede]
   footer = local_assigns[:footer]
 %>
 <div class="bg-white text-ink">
 
-  <%# ---------- Header ---------- %>
-  <section class="max-w-4xl mx-auto px-6 pt-12 pb-10 md:pt-16 text-center">
-    <h1 class="font-display text-5xl md:text-6xl leading-[0.95] tracking-tight">
-      <span class="block text-black"><%= heading_top %></span>
-      <span class="block text-brand-green"><%= heading_bottom %></span>
-    </h1>
-    <% if lede.present? %>
-      <p class="mt-6 text-lg text-gray-700 max-w-md mx-auto"><%= lede %></p>
-    <% end %>
-  </section>
-
-  <%= render "shared/section_divider" %>
+  <%= render "shared/page_header",
+        heading_top: heading_top,
+        heading_bottom: heading_bottom,
+        lede: local_assigns[:lede] %>
 
   <%# ---------- Form card ---------- %>
   <section class="max-w-4xl mx-auto px-6 py-12">
