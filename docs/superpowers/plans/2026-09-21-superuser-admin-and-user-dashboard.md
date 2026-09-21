@@ -837,7 +837,7 @@ referenced a User::Session constant that does not exist."
 - Consumes: `shared/page_header`, `shared/panel`, `shared/data_table`, `shared/status_badge`, `shared/empty_state`, `admin/tabs`.
 - Produces: no new interfaces — these are leaf pages.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `test/integration/admin_pages_test.rb`:
 
@@ -877,12 +877,12 @@ class AdminPagesTest < ActionDispatch::IntegrationTest
 end
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bin/rails test test/integration/admin_pages_test.rb`
 Expected: the first two tests FAIL on the `assert_select` — the placeholder views from Task 4 have no headings or tables. The third passes already.
 
-- [ ] **Step 3: Build the accounts page**
+- [x] **Step 3: Build the accounts page**
 
 Replace `app/views/admin/accounts/index.html.erb`:
 
@@ -930,7 +930,7 @@ Replace `app/views/admin/accounts/index.html.erb`:
 </div>
 ```
 
-- [ ] **Step 4: Build the orders page**
+- [x] **Step 4: Build the orders page**
 
 Replace `app/views/admin/orders/index.html.erb`:
 
@@ -970,16 +970,16 @@ Replace `app/views/admin/orders/index.html.erb`:
 </div>
 ```
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `bin/rails test test/integration/admin_pages_test.rb`
 Expected: 3 runs, 0 failures.
 
-- [ ] **Step 6: Run the full suite and lint**
+- [x] **Step 6: Run the full suite and lint**
 
 Run: `bin/rails test test/ && bin/rubocop`
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
