@@ -1,0 +1,8 @@
+<%= render "shared/tab_nav",
+      current: request.path,
+      tabs: [
+        [ "Overview", dashboard_path ],
+        [ "Account",  dashboard_account_path ],
+        [ "Orders",   dashboard_orders_path ],
+        [ "Checkout", dashboard_checkout_path ]
+      ] %>

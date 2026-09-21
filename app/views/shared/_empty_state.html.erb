@@ -1,0 +1,7 @@
+<div class="py-12 text-center">
+  <span class="inline-block w-3 h-3 rounded-full bg-brand-orange"></span>
+  <p class="mt-4 text-sm text-gray-600"><%= message %></p>
+  <% if local_assigns[:cta_label].present? && local_assigns[:cta_path].present? %>
+    <%= link_to cta_label, cta_path, class: "mt-6 inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-white font-bold text-sm tracking-wide uppercase px-6 py-3 rounded" %>
+  <% end %>
+</div>

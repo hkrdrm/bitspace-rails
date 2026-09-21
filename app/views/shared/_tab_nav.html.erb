@@ -1,0 +1,8 @@
+<div class="border-b-2 border-brand-green/30">
+  <nav class="max-w-7xl mx-auto px-6 flex flex-wrap gap-x-8">
+    <% tabs.each do |tab_label, tab_path| %>
+      <% active = (current == tab_path) %>
+      <%= link_to tab_label, tab_path, class: "py-3 font-bold text-sm uppercase tracking-wide border-b-4 -mb-0.5 #{active ? "border-brand-green text-brand-green" : "border-transparent text-gray-600 hover:text-brand-green"}" %>
+    <% end %>
+  </nav>
+</div>

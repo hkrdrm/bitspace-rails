@@ -7,6 +7,26 @@
       "message": "Support for Rails 8.0.2 ends on 2026-11-07",
       "file": "Gemfile.lock",
       "note": "Upgrade to Rails 8.1 before 2026-11-07, then remove this entry."
+    },
+    {
+      "warning_type": "HTTP Verb Confusion",
+      "warning_code": 118,
+      "fingerprint": "b728f9b3eef40e30602ccd507fc4df89f6ab38e938b6666f60cc3b4170a6eee5",
+      "check_name": "VerbConfusion",
+      "message": "Potential HTTP verb confusion. `HEAD` is routed like `GET` but `request.get?` will return `false`",
+      "file": "app/controllers/concerns/records_page_views.rb",
+      "line": 19,
+      "link": "https://brakemanscanner.org/docs/warning_types/http_verb_confusion/",
+      "code": "return unless request.get?",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "RecordsPageViews",
+        "method": "record_page_view"
+      },
+      "user_input": "request.get?",
+      "confidence": "Weak",
+      "note": "Not an authorization check. This guard only decides whether to write an analytics row, and skipping HEAD is the behaviour we want: a HEAD request renders no body and is not a page view. Excluding it keeps monitors and link checkers out of the traffic figures. Nothing is permitted or denied here."
     }
   ],
   "brakeman_version": "8.0.6"

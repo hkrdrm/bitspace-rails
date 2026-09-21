@@ -2,14 +2,11 @@ class ApplicationController < ActionController::Base
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
   allow_browser versions: :modern
 
-  private
-  def current_session
-    User::Session.find
-  end
+  include RecordsPageViews
 
-  def current_user
-    @current_user ||= current_session.record
-  end
+  helper_method :current_account
+
+  private
 
   def current_account
     rodauth.rails_account
@@ -19,5 +16,10 @@ class ApplicationController < ActionController::Base
     rodauth.require_account
   end
 
-  helper_method :current_account
+  # A 404 rather than a 403: an admin area that answers "forbidden" tells a
+  # prober it exists.
+  def require_superuser
+    authenticate
+    raise ActionController::RoutingError, "Not Found" unless current_account&.superuser?
+  end
 end

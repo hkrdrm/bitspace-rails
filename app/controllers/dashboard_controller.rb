@@ -1,16 +1,15 @@
 class DashboardController < ApplicationController
+  before_action :authenticate
+
   def index
   end
 
-  def new_issue
+  def account
   end
 
-  def create_issue
-    @issue = Issue.create(
-      name: params[:name], description: params[:description],
-      issue_number: params[:issue_number], comic_id: params[:comic_id],
-    )
+  def orders
+  end
 
-    @issue.save_image(params[:image])
+  def checkout
   end
 end

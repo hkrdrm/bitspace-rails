@@ -1,0 +1,73 @@
+<div class="bg-white text-ink">
+  <%= render "shared/page_header", heading_top: "YOUR", heading_bottom: "ACCOUNT." %>
+
+  <%= render "dashboard/tabs" %>
+
+  <section class="max-w-4xl mx-auto px-6 py-12 space-y-8">
+    <%= render layout: "shared/panel", locals: { title: "Sign in details" } do %>
+      <dl class="space-y-4 text-sm">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <dt class="text-xs font-bold uppercase tracking-widest text-gray-500">Email</dt>
+            <dd class="mt-1 font-bold"><%= current_account&.email %></dd>
+          </div>
+          <%= link_to "Change email", rodauth.change_login_path, class: "font-bold text-sm uppercase tracking-wide underline decoration-2 underline-offset-4 text-brand-green" %>
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-200">
+          <div>
+            <dt class="text-xs font-bold uppercase tracking-widest text-gray-500">Password</dt>
+            <dd class="mt-1 font-bold">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</dd>
+          </div>
+          <%= link_to "Change password", rodauth.change_password_path, class: "font-bold text-sm uppercase tracking-wide underline decoration-2 underline-offset-4 text-brand-green" %>
+        </div>
+      </dl>
+    <% end %>
+
+    <%= render layout: "shared/panel", locals: { title: "Shipping addresses" } do %>
+      <div class="space-y-4">
+        <% [ [ "Home", "114 Main St, McComb, MS 39648", true ],
+             [ "Studio", "22 Delaware Ave, McComb, MS 39648", false ] ].each do |name, line, is_default| %>
+          <div class="flex flex-wrap items-start justify-between gap-4 p-4 border-2 border-gray-200 rounded-lg">
+            <div>
+              <div class="font-bold text-sm flex items-center gap-2">
+                <%= name %>
+                <% if is_default %><%= render "shared/status_badge", label: "Default", tone: :green %><% end %>
+              </div>
+              <div class="mt-1 text-sm text-gray-600"><%= line %></div>
+            </div>
+            <div class="flex gap-4 text-xs font-bold uppercase tracking-widest text-brand-green">
+              <span>Edit</span><span>Remove</span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      <button type="button" class="mt-6 inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-white font-bold text-sm tracking-wide uppercase px-6 py-3 rounded">
+        Add an address <span aria-hidden="true">&rarr;</span>
+      </button>
+    <% end %>
+
+    <%= render layout: "shared/panel", locals: { title: "Payment methods" } do %>
+      <div class="space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-4 p-4 border-2 border-gray-200 rounded-lg">
+          <div>
+            <div class="font-bold text-sm flex items-center gap-2">
+              Visa ending 4242
+              <%= render "shared/status_badge", label: "Default", tone: :green %>
+            </div>
+            <div class="mt-1 text-sm text-gray-600">Expires 04/29</div>
+          </div>
+          <div class="flex gap-4 text-xs font-bold uppercase tracking-widest text-brand-green">
+            <span>Edit</span><span>Remove</span>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="mt-6 inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-white font-bold text-sm tracking-wide uppercase px-6 py-3 rounded">
+        Add a card <span aria-hidden="true">&rarr;</span>
+      </button>
+    <% end %>
+
+    <div class="text-center pt-4">
+      <%= link_to "Close your account", rodauth.close_account_path, class: "text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-brand-orange underline decoration-2 underline-offset-4" %>
+    </div>
+  </section>
+</div>

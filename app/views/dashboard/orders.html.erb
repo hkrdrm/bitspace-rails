@@ -1,0 +1,32 @@
+<div class="bg-white text-ink">
+  <%= render "shared/page_header", heading_top: "YOUR", heading_bottom: "ORDERS." %>
+
+  <%= render "dashboard/tabs" %>
+
+  <section class="max-w-7xl mx-auto px-6 py-12">
+    <%= render layout: "shared/panel", locals: { title: "Order history" } do %>
+      <%= render layout: "shared/data_table", locals: { headers: [ "Order", "Date", "Items", "Total", "Status", "" ] } do %>
+        <%
+          rows = [
+            [ "#1042", "2026-09-19", 3, "$54.00", "Shipped",  :green ],
+            [ "#1041", "2026-09-18", 1, "$12.00", "Paid",     :green ],
+            [ "#1036", "2026-08-30", 6, "$96.00", "Printing", :orange ],
+            [ "#1021", "2026-07-11", 2, "$24.00", "Cancelled", :gray ]
+          ]
+        %>
+        <% rows.each do |number, date, items, total, status, tone| %>
+          <tr>
+            <td class="py-3 pr-6 font-bold"><%= number %></td>
+            <td class="py-3 pr-6 text-gray-600 whitespace-nowrap"><%= date %></td>
+            <td class="py-3 pr-6 text-gray-600"><%= items %></td>
+            <td class="py-3 pr-6 font-bold whitespace-nowrap"><%= total %></td>
+            <td class="py-3 pr-6"><%= render "shared/status_badge", label: status, tone: tone %></td>
+            <td class="py-3 text-right">
+              <span class="font-bold text-xs uppercase tracking-widest text-brand-green">View</span>
+            </td>
+          </tr>
+        <% end %>
+      <% end %>
+    <% end %>
+  </section>
+</div>

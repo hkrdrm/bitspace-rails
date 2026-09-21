@@ -1,6 +1,8 @@
 development:
   adapter: postgresql
-  database: <%= ENV["DATABASE_NAME"] %>
+  # Defaults to a dedicated development database rather than DATABASE_NAME, which
+  # the production block also reads. Set DEV_DATABASE_NAME to point elsewhere.
+  database: <%= ENV.fetch("DEV_DATABASE_NAME", "bitspace_dev") %>
   user: <%= ENV["DATABASE_USER"] %>
   port: <%= ENV["DATABASE_PORT"] %>
   password: <%= ENV["DATABASE_PASSWORD"] %>
