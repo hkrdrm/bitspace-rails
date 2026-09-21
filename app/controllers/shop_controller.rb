@@ -1,6 +1,6 @@
 class ShopController < ApplicationController
   def index
-    @products = Product.published.all
+    @products = Product.published.eager(:variants).all
   end
 
   def show

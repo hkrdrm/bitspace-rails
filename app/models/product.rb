@@ -65,5 +65,9 @@ class Product < Sequel::Model
     validates_format(/\A[a-z0-9-]+\z/, :slug, message: "must be lowercase letters, numbers and dashes")
     validates_unique(:slug)
     validates_operator(:>=, 0, :base_price_cents, allow_nil: true)
+
+    if image.present? && Rails.application.assets.load_path.find(image).nil?
+      errors.add(:image, "is not a file in app/assets/images")
+    end
   end
 end

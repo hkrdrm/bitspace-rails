@@ -12,7 +12,7 @@
     <div class="pt-8 border-t-2 border-gray-200">
       <%= button_to "Delete this product", admin_product_path(@product.id),
             method: :delete,
-            form: { data: { turbo: false } },
+            form: { data: { turbo_confirm: "Delete #{@product.name} and all of its stock records? This cannot be undone." } },
             class: "text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-brand-orange underline decoration-2 underline-offset-4" %>
       <p class="mt-2 text-xs text-gray-500">
         Deletes the product and all of its stock records. Untick “Visible in the shop” instead to hide it without losing data.

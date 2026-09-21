@@ -12,9 +12,7 @@
         <% @products.each do |product| %>
           <%= link_to shop_product_path(product.slug), class: "group block border-2 border-brand-green rounded-xl overflow-hidden" do %>
             <div class="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
-              <% if product.image.present? %>
-                <%= image_tag product.image, alt: product.name, class: "w-full h-full object-cover group-hover:scale-105 transition-transform" %>
-              <% end %>
+              <%= product_image_tag product, alt: product.name, class: "w-full h-full object-cover group-hover:scale-105 transition-transform" %>
             </div>
             <div class="p-5">
               <h2 class="font-display text-2xl tracking-tight"><%= product.name %></h2>

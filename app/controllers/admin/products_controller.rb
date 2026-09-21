@@ -1,7 +1,7 @@
 module Admin
   class ProductsController < BaseController
     def index
-      @products = Product.order(:name).all
+      @products = Product.order(:name).eager(:variants).all
     end
 
     def new
@@ -16,6 +16,8 @@ module Admin
       @product = Product.new(product_attributes)
       @selected_colors = selected_colors
       @prices = submitted_prices
+      @price_inputs = raw_price_inputs
+      @base_price_input = raw_base_price_input
       @stock  = submitted_stock
 
       if @selected_colors.empty?
@@ -23,8 +25,7 @@ module Admin
         return render :new, status: :unprocessable_entity
       end
 
-      if @product.base_price_cents.nil? || @prices.value?(nil)
-        @product.errors.add(:base, "Prices must be amounts like 12.00")
+      if add_price_field_errors(@product, @prices)
         return render :new, status: :unprocessable_entity
       end
 
@@ -56,6 +57,8 @@ module Admin
       @product.set(product_attributes)
       @selected_colors = selected_colors
       @prices = submitted_prices
+      @price_inputs = raw_price_inputs
+      @base_price_input = raw_base_price_input
       @stock  = submitted_stock
 
       if @selected_colors.empty?
@@ -63,8 +66,7 @@ module Admin
         return render :edit, status: :unprocessable_entity
       end
 
-      if @product.base_price_cents.nil? || @prices.value?(nil)
-        @product.errors.add(:base, "Prices must be amounts like 12.00")
+      if add_price_field_errors(@product, @prices)
         return render :edit, status: :unprocessable_entity
       end
 
@@ -118,6 +120,39 @@ module Admin
 
     def submitted_prices
       Product::SIZES.index_with { |size| cents(params.dig(:prices, size)) }
+    end
+
+    # The raw, as-typed text for each size price, so a re-rendered form can
+    # show the user what they actually submitted rather than a value derived
+    # from it (a failed parse must never be redisplayed as "0.00").
+    def raw_price_inputs
+      Product::SIZES.index_with { |size| params.dig(:prices, size).to_s }
+    end
+
+    def raw_base_price_input
+      params.dig(:product, :base_price).to_s
+    end
+
+    # Attaches an error to each individual money field that failed to parse,
+    # rather than one generic message on :base, so the re-rendered form's
+    # error list names which of the seven fields is wrong. Returns true when
+    # any price field was invalid.
+    def add_price_field_errors(product, prices)
+      invalid = false
+
+      if product.base_price_cents.nil?
+        product.errors.add(:base_price, "must be an amount like 12.00")
+        invalid = true
+      end
+
+      prices.each do |size, cents_value|
+        next unless cents_value.nil?
+
+        product.errors.add(:"price_#{size}", "for size #{size} must be an amount like 12.00")
+        invalid = true
+      end
+
+      invalid
     end
 
     def submitted_stock

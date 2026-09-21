@@ -26,6 +26,22 @@ class AdminProductsTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "signed out visitors are redirected away from create, update and delete" do
+    product = create_product
+
+    post "/admin/products", params: valid_params
+    assert_response :redirect
+
+    patch "/admin/products/#{product.id}", params: { product: { name: "Nope" } }
+    assert_response :redirect
+
+    delete "/admin/products/#{product.id}"
+    assert_response :redirect
+
+    assert_equal 1, Product.count, "nothing should have been written"
+    assert_equal "Sample Tee", Product[product.id].name, "the product should be untouched"
+  end
+
   test "a non-superuser gets a 404 from the product pages" do
     product = create_product
     sign_in create_account(superuser: false)
@@ -157,6 +173,27 @@ class AdminProductsTest < ActionDispatch::IntegrationTest
     assert_equal 0, ProductVariant.count, "no variants should be left behind"
   end
 
+  test "a bogus image filename is rejected and writes nothing" do
+    sign_in create_account(superuser: true)
+
+    post "/admin/products", params: valid_params(product: { image: "3crow.pgn" })
+    assert_response :unprocessable_entity
+    assert_equal 0, Product.count
+    assert_equal 0, ProductVariant.count
+    assert_select "body", text: /is not a file in app\/assets\/images/i
+  end
+
+  test "the product list still renders when a product's image no longer resolves" do
+    product = create_product
+    product.set(image: "no-longer-on-disk.png")
+    product.save(validate: false)
+    sign_in create_account(superuser: true)
+
+    get "/admin/products"
+    assert_response :success
+    assert_select "body", text: /Sample Tee/
+  end
+
   test "a duplicate slug re-renders rather than raising" do
     create_product(slug: "taken")
     sign_in create_account(superuser: true)
@@ -181,6 +218,27 @@ class AdminProductsTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     assert_equal 0, Product.count
     assert_equal 0, ProductVariant.count
+  end
+
+  test "a rejected malformed price is redisplayed as typed, not as 0.00" do
+    sign_in create_account(superuser: true)
+
+    post "/admin/products", params: valid_params(prices: { "S" => "abc" })
+    assert_response :unprocessable_entity
+
+    assert_select "input[name='prices[S]'][value=?]", "abc"
+    assert_select "input[name='prices[S]'][value=?]", "0.00", count: 0
+    assert_select "body", text: /size S must be an amount/i
+  end
+
+  test "a rejected malformed base price is redisplayed as typed, not as 0.00" do
+    sign_in create_account(superuser: true)
+
+    post "/admin/products", params: valid_params(product: { base_price: "abc" })
+    assert_response :unprocessable_entity
+
+    assert_select "input[name='product[base_price]'][value=?]", "abc"
+    assert_select "input[name='product[base_price]'][value=?]", "0.00", count: 0
   end
 
   test "a negative price is rejected rather than silently flipped" do

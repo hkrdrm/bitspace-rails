@@ -29,6 +29,26 @@ class ShopTest < ActionDispatch::IntegrationTest
     assert_select "body", text: /Listed Tee/
   end
 
+  test "the catalog still renders when a product's image no longer resolves" do
+    product = create_product(slug: "broken-image", name: "Broken Image Tee")
+    product.set(image: "no-longer-on-disk.png")
+    product.save(validate: false)
+
+    get "/shop"
+    assert_response :success
+    assert_select "body", text: /Broken Image Tee/
+  end
+
+  test "a product page still renders when its image no longer resolves" do
+    product = create_product(slug: "broken-image-detail", name: "Broken Image Detail Tee")
+    product.set(image: "no-longer-on-disk.png")
+    product.save(validate: false)
+
+    get "/shop/broken-image-detail"
+    assert_response :success
+    assert_select "body", text: /Broken Image Detail Tee/
+  end
+
   test "the catalog omits inactive products" do
     create_product(slug: "hidden", name: "Hidden Tee", active: false)
 

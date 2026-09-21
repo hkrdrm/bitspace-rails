@@ -44,6 +44,14 @@ class ProductTest < ActiveSupport::TestCase
     assert_raises(Sequel::ValidationFailed) { build_product(base_price_cents: -1) }
   end
 
+  test "image must resolve to a real asset" do
+    assert_raises(Sequel::ValidationFailed) { build_product(image: "definitely_missing.png") }
+  end
+
+  test "a blank image is allowed" do
+    assert build_product(image: nil).id
+  end
+
   test "a variant size must be one of the known sizes" do
     product = build_product
     assert_raises(Sequel::ValidationFailed) { build_variant(product, size: "XXS") }
