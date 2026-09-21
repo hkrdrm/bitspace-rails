@@ -165,7 +165,7 @@ Expected: 5 tests, 5 assertions groups passing, 0 failures.
 
 - [x] **Step 8: Run the full suite and lint**
 
-Run: `bin/rails test && bin/rubocop`
+Run: `bin/rails test test/ && bin/rubocop`
 Expected: no failures, no offenses.
 
 - [x] **Step 9: Commit**
@@ -199,7 +199,7 @@ separate, explicit decision."
   - `create_account(email: nil, password: "password123", status: 2, superuser: false)` → `Account` — test helper on `ActiveSupport::TestCase`, generates a unique `@example.test` email when none is given
   - `sign_in(account, password: "password123")` — test helper on `ActionDispatch::IntegrationTest`, POSTs to `/login`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `test/models/account_test.rb`:
 
@@ -225,7 +225,7 @@ class AccountTest < ActiveSupport::TestCase
 end
 ```
 
-- [ ] **Step 2: Add the test helpers**
+- [x] **Step 2: Add the test helpers**
 
 Replace `test/test_helper.rb` with:
 
@@ -278,14 +278,16 @@ class ActionDispatch::IntegrationTest
 end
 ```
 
+**Correction applied during execution:** the replacement file shown above drops the `setup_fixtures`/`teardown_fixtures` overrides added in Task 1, which would make every test error again before its body runs. The committed file keeps them alongside the helpers below. Do not paste this block over the real file verbatim.
+
 Two things to know about this file. `parallelize(workers: 1)` replaces the previous `workers: :number_of_processors`: Rails' parallel testing creates a database per worker for ActiveRecord only, so Sequel workers would all hammer the same database and collide. The `status: 2` default on `create_account` means verified — rodauth refuses to log in unverified accounts.
 
-- [ ] **Step 3: Run test to verify it fails**
+- [x] **Step 3: Run test to verify it fails**
 
 Run: `bin/rails test test/models/account_test.rb`
 Expected: FAIL with `Sequel::DatabaseError` or `NoMethodError: undefined method 'superuser?'` — the column does not exist yet.
 
-- [ ] **Step 4: Write the migration**
+- [x] **Step 4: Write the migration**
 
 Create `db/migrate/20260921120000_add_superuser_to_accounts.rb`:
 
@@ -303,7 +305,7 @@ end
 
 `TrueClass` is how Sequel's schema DSL spells a boolean column; it produces PostgreSQL `boolean`.
 
-- [ ] **Step 5: Run the migration in both environments**
+- [x] **Step 5: Run the migration in both environments**
 
 ```bash
 bin/rails db:migrate
@@ -312,7 +314,7 @@ RAILS_ENV=test bin/rails db:migrate
 
 Expected: both succeed, and `db/schema.rb` now shows `column :superuser, "boolean", :default=>false, :null=>false` inside `create_table(:accounts)`.
 
-- [ ] **Step 6: Add the boolean_readers plugin**
+- [x] **Step 6: Add the boolean_readers plugin**
 
 Replace `app/models/account.rb` with:
 
@@ -327,16 +329,16 @@ end
 
 Sequel does not create `?` readers for plain columns the way ActiveRecord does. The `unverified?` / `verified?` / `closed?` methods already on this model come from the `enum` plugin; `boolean_readers` is what supplies `superuser?`.
 
-- [ ] **Step 7: Run tests to verify they pass**
+- [x] **Step 7: Run tests to verify they pass**
 
 Run: `bin/rails test test/models/account_test.rb`
 Expected: 3 runs, 3 assertions, 0 failures.
 
-- [ ] **Step 8: Run the full suite and lint**
+- [x] **Step 8: Run the full suite and lint**
 
-Run: `bin/rails test && bin/rubocop`
+Run: `bin/rails test test/ && bin/rubocop`
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add -A
@@ -554,7 +556,7 @@ Expected: 3 runs, 0 failures. The auth pages must be byte-for-byte equivalent in
 
 - [ ] **Step 6: Run the full suite and lint**
 
-Run: `bin/rails test && bin/rubocop`
+Run: `bin/rails test test/ && bin/rubocop`
 
 - [ ] **Step 7: Commit**
 
@@ -806,7 +808,7 @@ Expected: 3 runs, 0 failures.
 
 - [ ] **Step 10: Run the full suite and lint**
 
-Run: `bin/rails test && bin/rubocop`
+Run: `bin/rails test test/ && bin/rubocop`
 
 - [ ] **Step 11: Commit**
 
@@ -973,7 +975,7 @@ Expected: 3 runs, 0 failures.
 
 - [ ] **Step 6: Run the full suite and lint**
 
-Run: `bin/rails test && bin/rubocop`
+Run: `bin/rails test test/ && bin/rubocop`
 
 - [ ] **Step 7: Commit**
 
@@ -1181,7 +1183,7 @@ If the "signed in account is attributed" test fails with a `nil` `account_id`, c
 
 - [ ] **Step 9: Run the full suite and lint**
 
-Run: `bin/rails test && bin/rubocop`
+Run: `bin/rails test test/ && bin/rubocop`
 
 - [ ] **Step 10: Commit**
 
@@ -1395,7 +1397,7 @@ Watch for one thing: the admin page request is itself an HTML GET and gets recor
 
 - [ ] **Step 6: Run the full suite and lint**
 
-Run: `bin/rails test && bin/rubocop`
+Run: `bin/rails test test/ && bin/rubocop`
 
 - [ ] **Step 7: Commit**
 
@@ -1660,7 +1662,7 @@ Expected: 3 runs, 0 failures.
 
 - [ ] **Step 10: Run the full suite and lint**
 
-Run: `bin/rails test && bin/rubocop`
+Run: `bin/rails test test/ && bin/rubocop`
 
 - [ ] **Step 11: Commit**
 
@@ -1904,7 +1906,7 @@ Expected: 3 runs, 0 failures.
 
 - [ ] **Step 6: Run the full suite and lint**
 
-Run: `bin/rails test && bin/rubocop`
+Run: `bin/rails test test/ && bin/rubocop`
 Expected: whole suite green.
 
 - [ ] **Step 7: Verify every page renders in a browser**
