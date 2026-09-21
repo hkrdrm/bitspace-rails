@@ -212,4 +212,118 @@ class AdminProductsTest < ActionDispatch::IntegrationTest
     assert_equal 1200, product.base_price_cents
     assert_equal 120_000, product.variants.find { |v| v.size == "2XL" && v.color == "Black" }.price_cents
   end
+
+  def create_two_color_product
+    sign_in create_account(superuser: true)
+    post "/admin/products", params: valid_params
+    Product.first(slug: "new-tee")
+  end
+
+  test "the edit form is prefilled from the product" do
+    product = create_two_color_product
+
+    get "/admin/products/#{product.id}/edit"
+    assert_response :success
+    assert_select "input[name='product[name]'][value=?]", "New Tee"
+    assert_select "input[name='colors[]'][value='Black'][checked]"
+    assert_select "input[name='colors[]'][value='White'][checked]"
+    assert_select "input[name='colors[]'][value='Red'][checked]", count: 0
+    assert_select "input[name='stock[Black][S]'][value=?]", "5"
+  end
+
+  test "updating a price applies it to every colour of that size" do
+    product = create_two_color_product
+
+    patch "/admin/products/#{product.id}",
+          params: valid_params(prices: { "S" => "19.50" })
+    assert_redirected_to "/admin/products"
+
+    product.refresh
+    assert_equal 1950, product.variants.find { |v| v.size == "S" && v.color == "Black" }.price_cents
+    assert_equal 1950, product.variants.find { |v| v.size == "S" && v.color == "White" }.price_cents
+  end
+
+  test "updating one stock cell leaves the others alone" do
+    product = create_two_color_product
+
+    patch "/admin/products/#{product.id}",
+          params: valid_params(stock: { "Black" => { "M" => "99" } })
+
+    product.refresh
+    assert_equal 99, product.stock_for(size: "M", color: "Black")
+    assert_equal 5,  product.stock_for(size: "S", color: "Black")
+    assert_equal 3,  product.stock_for(size: "M", color: "White")
+  end
+
+  test "adding a colour creates its six sizes at zero stock" do
+    product = create_two_color_product
+
+    patch "/admin/products/#{product.id}",
+          params: valid_params(colors: [ "Black", "White", "Red" ])
+
+    product.refresh
+    assert_equal 18, product.variants.count
+    assert_equal [ "Black", "White", "Red" ], product.colors
+    assert_equal 0, product.stock_for(size: "S", color: "Red")
+  end
+
+  test "removing a colour deletes its rows" do
+    product = create_two_color_product
+
+    patch "/admin/products/#{product.id}", params: valid_params(colors: [ "Black" ])
+
+    product.refresh
+    assert_equal 6, product.variants.count
+    assert_equal [ "Black" ], product.colors
+    assert_equal 0, ProductVariant.where(product_id: product.id, color: "White").count
+  end
+
+  test "updating to an invalid product writes nothing" do
+    product = create_two_color_product
+
+    patch "/admin/products/#{product.id}", params: valid_params(product: { name: "" })
+    assert_response :unprocessable_entity
+
+    product.refresh
+    assert_equal "New Tee", product.name
+    assert_equal 12, product.variants.count
+  end
+
+  test "updating with no colours selected writes nothing" do
+    product = create_two_color_product
+
+    patch "/admin/products/#{product.id}", params: valid_params(colors: [])
+    assert_response :unprocessable_entity
+
+    product.refresh
+    assert_equal 12, product.variants.count, "the grid should be untouched"
+  end
+
+  test "updating with a malformed price is rejected and writes nothing" do
+    product = create_two_color_product
+
+    patch "/admin/products/#{product.id}", params: valid_params(prices: { "S" => "abc" })
+    assert_response :unprocessable_entity
+
+    product.refresh
+    assert_equal 12, product.variants.count
+    assert_equal 1200, product.variants.find { |v| v.size == "S" && v.color == "Black" }.price_cents
+  end
+
+  test "deleting a product takes its variants with it" do
+    product = create_two_color_product
+
+    delete "/admin/products/#{product.id}"
+    assert_redirected_to "/admin/products"
+
+    assert_nil Product[product.id]
+    assert_equal 0, ProductVariant.where(product_id: product.id).count
+  end
+
+  test "editing an unknown product is a 404" do
+    sign_in create_account(superuser: true)
+
+    get "/admin/products/999999/edit"
+    assert_response :not_found
+  end
 end

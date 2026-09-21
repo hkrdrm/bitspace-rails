@@ -41,15 +41,59 @@ module Admin
     end
 
     def edit
+      @product = find_product!
+      @selected_colors = @product.colors
+      @prices = Product::SIZES.index_with do |size|
+        @product.variants.find { |variant| variant.size == size }&.price_cents || @product.base_price_cents
+      end
+      @stock = @product.colors.index_with do |color|
+        Product::SIZES.index_with { |size| @product.stock_for(size: size, color: color) }
+      end
     end
 
     def update
+      @product = find_product!
+      @product.set(product_attributes)
+      @selected_colors = selected_colors
+      @prices = submitted_prices
+      @stock  = submitted_stock
+
+      if @selected_colors.empty?
+        @product.errors.add(:colors, "must include at least one colour")
+        return render :edit, status: :unprocessable_entity
+      end
+
+      if @product.base_price_cents.nil? || @prices.value?(nil)
+        @product.errors.add(:base, "Prices must be amounts like 12.00")
+        return render :edit, status: :unprocessable_entity
+      end
+
+      unless @product.valid?
+        return render :edit, status: :unprocessable_entity
+      end
+
+      Product.db.transaction do
+        @product.save
+        rebuild_variants(@product)
+      end
+
+      redirect_to admin_products_path, notice: "#{@product.name} updated."
     end
 
     def destroy
+      product = find_product!
+      name = product.name
+      product.destroy
+
+      redirect_to admin_products_path, notice: "#{name} deleted."
     end
 
     private
+
+    # A 404 rather than a redirect, matching how the admin gate hides itself.
+    def find_product!
+      Product[params[:id].to_i] or raise ActionController::RoutingError, "Not Found"
+    end
 
     def product_attributes
       attributes = params.require(:product)
