@@ -1220,7 +1220,7 @@ needs to care about GDPR."
 
 This is the only admin page reading real data.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `test/integration/admin_traffic_test.rb`:
 
@@ -1263,12 +1263,12 @@ class AdminTrafficTest < ActionDispatch::IntegrationTest
 end
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bin/rails test test/integration/admin_traffic_test.rb`
 Expected: the first two FAIL on `assert_select` — the placeholder view is empty.
 
-- [ ] **Step 3: Write the controller**
+- [x] **Step 3: Write the controller**
 
 Replace `app/controllers/admin/traffic_controller.rb`:
 
@@ -1313,7 +1313,7 @@ module Admin
 end
 ```
 
-- [ ] **Step 4: Build the view**
+- [x] **Step 4: Build the view**
 
 Replace `app/views/admin/traffic/index.html.erb`:
 
@@ -1394,18 +1394,20 @@ Replace `app/views/admin/traffic/index.html.erb`:
 </div>
 ```
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `bin/rails test test/integration/admin_traffic_test.rb`
 Expected: 3 runs, 0 failures.
 
 Watch for one thing: the admin page request is itself an HTML GET and gets recorded, so counts include the visit that rendered the page. The tests assert on the seeded rows being present rather than on exact totals, which is why they use `/3/` rather than `text: "3"`.
 
-- [ ] **Step 6: Run the full suite and lint**
+**Strengthened during execution:** those assertions match any digit anywhere on the page and would pass with a broken window, grouping or bot split. A fourth test pins the four stat tiles to exact rendered values and checks that rows outside the 7 day window are absent.
+
+- [x] **Step 6: Run the full suite and lint**
 
 Run: `bin/rails test test/ && bin/rubocop`
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
