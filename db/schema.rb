@@ -5,6 +5,7 @@ Sequel.migration do
       column :email, "citext", :null=>false
       column :status, "integer", :default=>1, :null=>false
       column :password_hash, "text"
+      column :superuser, "boolean", :default=>false, :null=>false
     end
     
     create_table(:comics) do
@@ -82,5 +83,6 @@ end
                   self << "SET search_path TO \"$user\", public"
                   self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('20250513161713_create_rodauth.rb')"
 self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('20250513172418_create_comics_and_issues.rb')"
+self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('20260921120000_add_superuser_to_accounts.rb')"
                 end
               end
