@@ -372,7 +372,7 @@ The vocabulary every admin and dashboard page is built from. Extracting `_page_h
   - `shared/empty_state` — `message:`, `cta_label:` (optional), `cta_path:` (optional)
   - `shared/tab_nav` — `tabs:` (array of `[label, path]` pairs), `current:` (a path string)
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 The auth pages are being refactored underneath, so this test is the regression guard. Create `test/integration/auth_pages_render_test.rb`:
 
@@ -402,12 +402,12 @@ class AuthPagesRenderTest < ActionDispatch::IntegrationTest
 end
 ```
 
-- [ ] **Step 2: Run test to verify it passes**
+- [x] **Step 2: Run test to verify it passes**
 
 Run: `bin/rails test test/integration/auth_pages_render_test.rb`
 Expected: PASS — these pages already work. This is a characterization test; it must keep passing after the refactor in Step 4.
 
-- [ ] **Step 3: Create the shared partials**
+- [x] **Step 3: Create the shared partials**
 
 `app/views/shared/_page_header.html.erb`:
 
@@ -519,7 +519,7 @@ Expected: PASS — these pages already work. This is a characterization test; it
 </div>
 ```
 
-- [ ] **Step 4: Refactor _auth_page to use the shared header**
+- [x] **Step 4: Refactor _auth_page to use the shared header**
 
 Replace `app/views/shared/_auth_page.html.erb` with:
 
@@ -549,16 +549,16 @@ Replace `app/views/shared/_auth_page.html.erb` with:
 </div>
 ```
 
-- [ ] **Step 5: Run the regression test**
+- [x] **Step 5: Run the regression test**
 
 Run: `bin/rails test test/integration/auth_pages_render_test.rb`
-Expected: 3 runs, 0 failures. The auth pages must be byte-for-byte equivalent in structure — same headings, same card, same footer links.
+Expected: 3 runs, 0 failures. Verified during execution by snapshotting the rendered HTML of all three pages before and after the extraction: identical once leading indentation is normalized. The auth pages must be byte-for-byte equivalent in structure — same headings, same card, same footer links.
 
-- [ ] **Step 6: Run the full suite and lint**
+- [x] **Step 6: Run the full suite and lint**
 
 Run: `bin/rails test test/ && bin/rubocop`
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
