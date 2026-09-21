@@ -99,11 +99,13 @@ class ProductTest < ActiveSupport::TestCase
 
   test "colors returns distinct colours in palette order" do
     product = build_product
-    build_variant(product, size: "S", color: "Red")
-    build_variant(product, size: "M", color: "Black")
-    build_variant(product, size: "L", color: "Red")
+    build_variant(product, size: "S", color: "Navy")
+    build_variant(product, size: "M", color: "White")
+    build_variant(product, size: "L", color: "Navy")
 
-    assert_equal [ "Black", "Red" ], product.colors
+    # White (palette index 1) comes before Navy (palette index 3) in palette order.
+    # Alphabetically, Navy < White, so a plain .sort would produce [ "Navy", "White" ].
+    assert_equal [ "White", "Navy" ], product.colors
   end
 
   test "variants_for returns one colour in size order" do
