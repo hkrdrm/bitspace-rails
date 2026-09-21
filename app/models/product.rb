@@ -20,6 +20,45 @@ class Product < Sequel::Model
   plugin :timestamps, update_on_create: true
   plugin :boolean_readers
 
+  dataset_module do
+    def published
+      where(active: true).order(:name)
+    end
+  end
+
+  # Which colours this design comes in. Derived from the variants so there is
+  # one source of truth rather than a list that can drift from the rows.
+  def colors
+    variants.map(&:color).uniq.sort_by { |color| COLORS.keys.index(color) || COLORS.size }
+  end
+
+  def variants_for(color)
+    variants.select { |variant| variant.color == color }
+  end
+
+  def price_range
+    prices = variants.map(&:price_cents)
+    return [ base_price_cents, base_price_cents ] if prices.empty?
+
+    [ prices.min, prices.max ]
+  end
+
+  def stock_for(size:, color:)
+    variants.find { |variant| variant.size == size && variant.color == color }&.stock || 0
+  end
+
+  def in_stock?
+    variants.any? { |variant| variant.stock.positive? }
+  end
+
+  def total_stock
+    variants.sum(&:stock)
+  end
+
+  def swatch_for(color)
+    COLORS.fetch(color, NEUTRAL_SWATCH)
+  end
+
   def validate
     super
     validates_presence [ :name, :slug, :base_price_cents ]

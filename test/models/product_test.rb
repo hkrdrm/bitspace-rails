@@ -88,4 +88,73 @@ class ProductTest < ActiveSupport::TestCase
 
     assert_equal Product::SIZES, product.variants.map(&:size)
   end
+
+  test "published returns only active products, ordered by name" do
+    build_product(name: "Zebra", slug: "zebra", active: true)
+    build_product(name: "Apple", slug: "apple", active: true)
+    build_product(name: "Hidden", slug: "hidden", active: false)
+
+    assert_equal [ "Apple", "Zebra" ], Product.published.select_map(:name)
+  end
+
+  test "colors returns distinct colours in palette order" do
+    product = build_product
+    build_variant(product, size: "S", color: "Red")
+    build_variant(product, size: "M", color: "Black")
+    build_variant(product, size: "L", color: "Red")
+
+    assert_equal [ "Black", "Red" ], product.colors
+  end
+
+  test "variants_for returns one colour in size order" do
+    product = build_product
+    Product::SIZES.each_with_index do |size, i|
+      build_variant(product, size: size, color: "Black", position: i)
+      build_variant(product, size: size, color: "White", position: i)
+    end
+
+    black = product.variants_for("Black")
+    assert_equal Product::SIZES, black.map(&:size)
+    assert_equal [ "Black" ], black.map(&:color).uniq
+  end
+
+  test "price_range spans the cheapest and dearest variant" do
+    product = build_product
+    build_variant(product, size: "S", price_cents: 1200)
+    build_variant(product, size: "2XL", price_cents: 1400, position: 4)
+
+    assert_equal [ 1200, 1400 ], product.price_range
+  end
+
+  test "price_range falls back to the base price when there are no variants" do
+    product = build_product(base_price_cents: 1500)
+    assert_equal [ 1500, 1500 ], product.price_range
+  end
+
+  test "stock_for returns the count for one SKU and zero for a missing one" do
+    product = build_product
+    build_variant(product, size: "M", color: "Black", stock: 7)
+
+    assert_equal 7, product.stock_for(size: "M", color: "Black")
+    assert_equal 0, product.stock_for(size: "M", color: "White")
+    assert_equal 0, product.stock_for(size: "3XL", color: "Black")
+  end
+
+  test "in_stock? and total_stock reflect the whole grid" do
+    product = build_product
+    build_variant(product, size: "S", stock: 0)
+    refute product.in_stock?
+    assert_equal 0, product.total_stock
+
+    build_variant(product, size: "M", stock: 4, position: 1)
+    product.refresh
+    assert product.in_stock?
+    assert_equal 4, product.total_stock
+  end
+
+  test "swatch_for returns palette hex, or neutral grey for an unknown colour" do
+    product = build_product
+    assert_equal "#0d1114", product.swatch_for("Black")
+    assert_equal Product::NEUTRAL_SWATCH, product.swatch_for("Chartreuse")
+  end
 end
