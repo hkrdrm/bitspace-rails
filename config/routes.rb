@@ -7,7 +7,10 @@ Rails.application.routes.draw do
   root "home#index"
 
   get "contact"   => "home#contact",    as: :contact
-  get "dashboard" => "dashboard#index", as: :dashboard
+  get "dashboard"          => "dashboard#index",    as: :dashboard
+  get "dashboard/account"  => "dashboard#account",  as: :dashboard_account
+  get "dashboard/orders"   => "dashboard#orders",   as: :dashboard_orders
+  get "dashboard/checkout" => "dashboard#checkout", as: :dashboard_checkout
 
   namespace :admin do
     root "overview#index"
