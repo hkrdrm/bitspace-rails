@@ -15,4 +15,20 @@ module ApplicationHelper
 
     image_tag(product.image, **options)
   end
+
+  IMAGE_EXTENSIONS = /\.(png|jpe?g|gif|webp|svg)\z/i
+
+  # Every image the admin may name, mapped to its served URL, for the filename
+  # field's live preview. The URL has to come from asset_path rather than being
+  # assembled in JavaScript: in production Propshaft precompiles only digested
+  # filenames and does not mount the middleware that resolves plain ones, so a
+  # guessed "/assets/<name>" would 404 for every image and the preview would
+  # silently never appear.
+  def product_image_sources
+    Rails.application.assets.load_path.assets
+      .map { |asset| asset.logical_path.to_s }
+      .select { |path| path.match?(IMAGE_EXTENSIONS) }
+      .sort
+      .to_h { |path| [ path, asset_path(path) ] }
+  end
 end

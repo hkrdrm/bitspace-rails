@@ -384,4 +384,26 @@ class AdminProductsTest < ActionDispatch::IntegrationTest
     get "/admin/products/999999/edit"
     assert_response :not_found
   end
+
+  # The preview used to build "/assets/<filename>" in JavaScript. Propshaft
+  # precompiles only digested filenames in production and does not mount the
+  # middleware that resolves plain ones, so that path 404s there and the preview
+  # silently never appears. The server now hands the controller a filename-to-URL
+  # map built with asset_path. Assert the URL is digested, which is what makes it
+  # work in production -- asserting only that the attribute exists would pass
+  # against the broken version.
+  test "the form carries digested asset urls for the image preview" do
+    sign_in create_account(superuser: true)
+
+    get "/admin/products/new"
+    assert_response :success
+
+    form = css_select("form").first
+    sources = JSON.parse(form["data-image-preview-sources-value"])
+
+    assert sources.key?("3crow.png"), "expected a seeded image in the preview source map"
+    assert_match %r{\A/assets/3crow-[0-9a-f]+\.png\z}, sources["3crow.png"],
+      "the preview URL must be the digested path, not a plain /assets/3crow.png"
+    refute sources.key?("no-such-image.png")
+  end
 end
