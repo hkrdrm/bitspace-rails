@@ -7,6 +7,8 @@ Rails.application.routes.draw do
   root "home#index"
 
   get "contact"   => "home#contact",    as: :contact
+  get "shop"       => "shop#index", as: :shop
+  get "shop/:slug" => "shop#show",  as: :shop_product
   get "dashboard"          => "dashboard#index",    as: :dashboard
   get "dashboard/account"  => "dashboard#account",  as: :dashboard_account
   get "dashboard/orders"   => "dashboard#orders",   as: :dashboard_orders
@@ -17,5 +19,6 @@ Rails.application.routes.draw do
     get "accounts" => "accounts#index", as: :accounts
     get "orders"   => "orders#index",   as: :orders
     get "traffic"  => "traffic#index",  as: :traffic
+    resources :products, except: [ :show ]
   end
 end

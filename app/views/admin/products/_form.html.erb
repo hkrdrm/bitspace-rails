@@ -1,0 +1,131 @@
+<%= form_with url: form_url, method: form_method, data: { turbo: false, controller: "variant-grid image-preview", image_preview_sources_value: product_image_sources.to_json }, class: "space-y-8" do %>
+  <% if @product.errors.any? %>
+    <div class="border-2 border-brand-orange rounded-lg p-4">
+      <p class="font-bold text-sm uppercase tracking-widest text-brand-orange">Could not save</p>
+      <ul class="mt-2 space-y-1 text-sm text-gray-700">
+        <% @product.errors.each do |field, messages| %>
+          <% Array(messages).each do |message| %>
+            <li><%= "#{field.to_s.humanize} #{message}" %></li>
+          <% end %>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= render layout: "shared/panel", locals: { title: "Details" } do %>
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div class="sm:col-span-2">
+        <label for="product_name" class="block text-xs font-bold uppercase tracking-widest text-gray-500">Name</label>
+        <input id="product_name" name="product[name]" type="text" value="<%= @product.name %>"
+               class="mt-2 w-full px-3 py-2 text-sm text-ink bg-white border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-brand-green focus:ring-brand-green/40">
+      </div>
+
+      <div class="sm:col-span-2">
+        <label for="product_slug" class="block text-xs font-bold uppercase tracking-widest text-gray-500">Slug</label>
+        <input id="product_slug" name="product[slug]" type="text" value="<%= @product.slug %>" placeholder="left blank, generated from the name"
+               class="mt-2 w-full px-3 py-2 text-sm text-ink bg-white border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-brand-green focus:ring-brand-green/40">
+      </div>
+
+      <div class="sm:col-span-2">
+        <label for="product_description" class="block text-xs font-bold uppercase tracking-widest text-gray-500">Description</label>
+        <textarea id="product_description" name="product[description]" rows="3"
+                  class="mt-2 w-full px-3 py-2 text-sm text-ink bg-white border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-brand-green focus:ring-brand-green/40"><%= @product.description %></textarea>
+      </div>
+
+      <div>
+        <label for="product_image" class="block text-xs font-bold uppercase tracking-widest text-gray-500">Image filename</label>
+        <div class="mt-2 flex items-center gap-3">
+          <input id="product_image" name="product[image]" type="text" value="<%= @product.image %>" placeholder="3crow.png"
+                 data-image-preview-target="input" data-action="input->image-preview#update"
+                 class="w-full px-3 py-2 text-sm text-ink bg-white border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-brand-green focus:ring-brand-green/40">
+          <img data-image-preview-target="preview" alt="" class="hidden w-12 h-12 flex-shrink-0 rounded object-cover border-2 border-gray-200">
+        </div>
+        <p data-image-preview-target="status" class="mt-1 hidden text-xs font-bold text-brand-orange"></p>
+        <p class="mt-1 text-xs text-gray-500">A file in <code>app/assets/images/</code>.</p>
+      </div>
+
+      <div>
+        <label for="product_base_price" class="block text-xs font-bold uppercase tracking-widest text-gray-500">Base price</label>
+        <input id="product_base_price" name="product[base_price]" type="text" value="<%= @base_price_input || ('%.2f' % ((@product.base_price_cents || 0) / 100.0)) %>"
+               class="mt-2 w-full px-3 py-2 text-sm text-ink bg-white border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-brand-green focus:ring-brand-green/40">
+      </div>
+
+      <div class="sm:col-span-2">
+        <label class="flex items-center gap-3 text-sm">
+          <input type="hidden" name="product[active]" value="0">
+          <input type="checkbox" name="product[active]" value="1" class="accent-brand-green" <%= "checked" if @product.active %>>
+          Visible in the shop
+        </label>
+      </div>
+    </div>
+  <% end %>
+
+  <%= render layout: "shared/panel", locals: { title: "Colours" } do %>
+    <p class="mb-4 text-sm text-brand-orange font-bold">
+      Unticking a colour deletes its stock counts. Re-ticking it starts that colour back at zero.
+    </p>
+    <div class="grid sm:grid-cols-3 gap-3">
+      <% Product::COLORS.each do |color, hex| %>
+        <label class="flex items-center gap-3 p-3 border-2 border-gray-200 rounded-lg cursor-pointer">
+          <input type="checkbox" name="colors[]" value="<%= color %>" class="accent-brand-green"
+                 data-variant-grid-target="colorToggle" data-color="<%= color %>"
+                 data-action="change->variant-grid#refresh"
+                 <%= "checked" if @selected_colors.include?(color) %>>
+          <span class="inline-block w-5 h-5 rounded-full border border-gray-300" style="background-color: <%= hex %>"></span>
+          <span class="font-bold text-sm"><%= color %></span>
+        </label>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%= render layout: "shared/panel", locals: { title: "Price by size", subtitle: "Applied to every colour of that size" } do %>
+    <div class="grid sm:grid-cols-3 gap-4">
+      <% Product::SIZES.each do |size| %>
+        <div>
+          <label for="price_<%= size %>" class="block text-xs font-bold uppercase tracking-widest text-gray-500"><%= size %></label>
+          <input id="price_<%= size %>" name="prices[<%= size %>]" type="text"
+                 value="<%= @price_inputs&.dig(size) || ('%.2f' % ((@prices[size] || 0) / 100.0)) %>"
+                 class="mt-2 w-full px-3 py-2 text-sm text-ink bg-white border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-brand-green focus:ring-brand-green/40">
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%= render layout: "shared/panel", locals: { title: "Stock", subtitle: "Units on hand per size and colour" } do %>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr class="border-b-2 border-brand-green">
+            <th class="py-3 pr-6 text-xs font-bold uppercase tracking-widest text-gray-500">Size</th>
+            <% Product::COLORS.each_key do |color| %>
+              <th class="py-3 pr-6 text-xs font-bold uppercase tracking-widest text-gray-500 whitespace-nowrap"
+                  data-variant-grid-target="column" data-color="<%= color %>"><%= color %></th>
+            <% end %>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <% Product::SIZES.each do |size| %>
+            <tr>
+              <td class="py-3 pr-6 font-bold"><%= size %></td>
+              <% Product::COLORS.each_key do |color| %>
+                <td class="py-3 pr-6" data-variant-grid-target="column" data-color="<%= color %>">
+                  <input name="stock[<%= color %>][<%= size %>]" type="number" min="0" step="1"
+                         value="<%= @stock.dig(color, size) || 0 %>"
+                         class="w-20 px-2 py-1 text-sm text-ink bg-white border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-brand-green focus:ring-brand-green/40">
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+
+  <div class="flex flex-wrap items-center gap-4">
+    <button type="submit"
+            class="inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-white font-bold text-sm tracking-wide uppercase px-8 py-3 rounded">
+      <%= submit_label %> <span aria-hidden="true">&rarr;</span>
+    </button>
+    <%= link_to "Cancel", admin_products_path, class: "text-xs font-bold uppercase tracking-widest text-gray-500" %>
+  </div>
+<% end %>
