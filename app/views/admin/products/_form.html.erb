@@ -20,6 +20,8 @@
     </div>
   <% end %>
 
+  <%= render "pending_loss" if @editor.pending_loss.any? %>
+
   <%= render layout: "shared/panel", locals: { title: "Details" } do %>
     <div class="grid sm:grid-cols-2 gap-4">
       <div class="sm:col-span-2">
@@ -125,6 +127,8 @@
              class="mt-2 w-32 <%= field_class %>">
     <% end %>
   <% end %>
+
+  <%= render "variants" unless product.new? %>
 
   <div class="flex flex-wrap items-center gap-4">
     <button type="submit"

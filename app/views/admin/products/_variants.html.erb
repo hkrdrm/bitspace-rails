@@ -1,0 +1,53 @@
+<%
+  field_class = "px-2 py-1 text-sm text-ink bg-white border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-brand-green focus:ring-brand-green/40"
+  head_class = "py-3 pr-6 text-xs font-bold uppercase tracking-widest text-gray-500 whitespace-nowrap"
+  product = @editor.product
+  variants = product.variants
+  default_price = ProductEditor.format_money(product.price_cents)
+%>
+<%= render layout: "shared/panel", locals: { title: "Variants", subtitle: "Stock on hand for each. Leave the price blank to sell at the product price." } do %>
+  <div data-controller="variant-filter">
+    <% if variants.size > 30 %>
+      <input type="search" placeholder="Filter variants, e.g. black" aria-label="Filter variants"
+             class="hidden mb-4 w-full <%= field_class %>"
+             data-variant-filter-target="query" data-action="input->variant-filter#filter">
+    <% end %>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr class="border-b-2 border-brand-green">
+            <% unless product.simple? %><th class="<%= head_class %>">Variant</th><% end %>
+            <th class="<%= head_class %>">Stock</th>
+            <th class="<%= head_class %>">Price</th>
+            <th class="<%= head_class %>">SKU</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <% variants.each do |variant| %>
+            <% input = @editor.variant_inputs.fetch(variant.id.to_s, {}) %>
+            <% base = "variants[#{variant.id}]" %>
+            <tr data-variant-filter-target="row" data-label="<%= variant.label.downcase %>">
+              <% unless product.simple? %>
+                <td class="py-3 pr-6 font-bold whitespace-nowrap"><%= variant.label %></td>
+              <% end %>
+              <td class="py-3 pr-6">
+                <input name="<%= base %>[stock]" type="number" min="0" step="1" value="<%= input.fetch("stock", variant.stock) %>"
+                       aria-label="Stock for <%= variant.label %>" class="w-24 <%= field_class %>">
+              </td>
+              <td class="py-3 pr-6">
+                <input name="<%= base %>[price_override]" type="text" inputmode="decimal"
+                       value="<%= input.fetch("price_override", ProductEditor.format_money(variant.price_override_cents)) %>"
+                       placeholder="<%= default_price %>" aria-label="Price for <%= variant.label %>" class="w-24 <%= field_class %>">
+              </td>
+              <td class="py-3 pr-6">
+                <input name="<%= base %>[sku]" type="text" value="<%= input.fetch("sku", variant.sku) %>"
+                       aria-label="SKU for <%= variant.label %>" class="w-36 <%= field_class %>">
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>

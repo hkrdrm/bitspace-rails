@@ -270,4 +270,125 @@ class AdminProductsTest < ActionDispatch::IntegrationTest
     assert_equal 0, ProductVariant.where(product_id: product.id).count
     assert_equal 0, ProductOption.where(product_id: product.id).count
   end
+
+  test "the edit form has a stock, price and SKU field for every variant" do
+    product = shirt
+    sign_in create_account(superuser: true)
+
+    get "/admin/products/#{product.id}/edit"
+    product.variants.each do |variant|
+      assert_select "input[name='variants[#{variant.id}][stock]'][value='3'][aria-label='Stock for #{variant.label}']"
+      assert_select "input[name='variants[#{variant.id}][price_override]'][placeholder='12.00']"
+      assert_select "input[name='variants[#{variant.id}][sku]']"
+    end
+    assert_select "td", text: "Red / M"
+  end
+
+  test "updating one stock cell leaves the others alone" do
+    product = shirt
+    target = variant_named(product, "Red / S")
+    params = form_params_for(product)
+    params["variants"][target.id.to_s]["stock"] = "11"
+    sign_in create_account(superuser: true)
+
+    patch "/admin/products/#{product.id}", params: params
+    assert_redirected_to "/admin/products"
+
+    product.refresh.variants.each do |variant|
+      assert_equal(variant.id == target.id ? 11 : 3, variant.stock, variant.label)
+    end
+  end
+
+  test "a price override is saved for one variant" do
+    product = shirt
+    target = variant_named(product, "Black / M")
+    params = form_params_for(product)
+    params["variants"][target.id.to_s]["price_override"] = "14.00"
+    sign_in create_account(superuser: true)
+
+    patch "/admin/products/#{product.id}", params: params
+    assert_equal 1400, target.refresh.price_override_cents
+    assert_equal [ 1200, 1400 ], product.refresh.price_range
+  end
+
+  test "a malformed override re-renders as typed and writes nothing" do
+    product = shirt
+    target = variant_named(product, "Black / M")
+    params = form_params_for(product)
+    params["variants"][target.id.to_s]["price_override"] = "lots"
+    sign_in create_account(superuser: true)
+
+    patch "/admin/products/#{product.id}", params: params
+    assert_response :unprocessable_entity
+    assert_select "li", text: "Price for Black / M must be an amount like 12.00, or blank to use the product price."
+    assert_select "input[name='variants[#{target.id}][price_override]'][value='lots']"
+    assert_nil target.refresh.price_override_cents
+  end
+
+  test "a SKU used by another product re-renders rather than raising" do
+    other = shirt(name: "Other Tee", slug: "other")
+    variant_named(other, "Black / S").update(sku: "TAKEN")
+    product = shirt
+    target = variant_named(product, "Black / S")
+    params = form_params_for(product)
+    params["variants"][target.id.to_s]["sku"] = "TAKEN"
+    sign_in create_account(superuser: true)
+
+    patch "/admin/products/#{product.id}", params: params
+    assert_response :unprocessable_entity
+    assert_select "li", text: "Black / S: Sku is already taken."
+  end
+
+  test "removing a value with stock asks for confirmation and deletes nothing" do
+    product = shirt
+    sign_in create_account(superuser: true)
+
+    patch "/admin/products/#{product.id}", params: without_value(form_params_for(product), "Colour", "Red")
+    assert_response :unprocessable_entity
+    assert_select "[data-pending-loss] li", text: /Red \/ S — 3 in stock/
+    assert_select "[data-pending-loss] li", text: /Red \/ M — 3 in stock/
+    assert_select "input[type='checkbox'][name='confirm_loss']"
+    assert_equal 4, product.refresh.variants.size
+  end
+
+  test "confirming the loss deletes the variants" do
+    product = shirt
+    sign_in create_account(superuser: true)
+
+    params = without_value(form_params_for(product), "Colour", "Red").merge("confirm_loss" => "1")
+    patch "/admin/products/#{product.id}", params: params
+    assert_redirected_to "/admin/products/#{product.id}/edit"
+    assert_equal [ "Black / S", "Black / M" ], product.refresh.variants.map(&:label)
+  end
+
+  test "removing a value with no stock needs no confirmation" do
+    product = shirt(stock: 0)
+    sign_in create_account(superuser: true)
+
+    patch "/admin/products/#{product.id}", params: without_value(form_params_for(product), "Colour", "Red")
+    assert_redirected_to "/admin/products/#{product.id}/edit"
+    assert_equal 2, product.refresh.variants.size
+  end
+
+  test "a filter box appears only when there are more than thirty variants" do
+    small = shirt
+    big = build_product(name: "Big Tee", options: { "Colour" => %w[A B C D E F], "Size" => %w[S M L XL 2XL 3XL] })
+    sign_in create_account(superuser: true)
+
+    get "/admin/products/#{small.id}/edit"
+    assert_select "input[data-variant-filter-target='query']", count: 0
+
+    get "/admin/products/#{big.id}/edit"
+    assert_select "input[data-variant-filter-target='query']", count: 1
+    assert_select "tr[data-variant-filter-target='row']", 36
+  end
+
+  test "a simple product's edit form has one variant row and no label column" do
+    sticker = build_product(name: "Sticker", options: {}, stock: 8)
+    sign_in create_account(superuser: true)
+
+    get "/admin/products/#{sticker.id}/edit"
+    assert_select "input[name='variants[#{sticker.variants.first.id}][stock]'][value='8']"
+    assert_select "th", text: "Variant", count: 0
+  end
 end
