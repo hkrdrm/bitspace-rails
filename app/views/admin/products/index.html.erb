@@ -13,7 +13,7 @@
       <% if @products.empty? %>
         <%= render "shared/empty_state", message: "No products yet.", cta_label: "Add the first one", cta_path: new_admin_product_path %>
       <% else %>
-        <%= render layout: "shared/data_table", locals: { headers: [ "", "Product", "Price", "Colours", "In stock", "Status", "" ] } do %>
+        <%= render layout: "shared/data_table", locals: { headers: [ "", "Product", "Price", "Options", "Variants", "In stock", "Status", "" ] } do %>
           <% @products.each do |product| %>
             <tr>
               <td class="py-3 pr-6">
@@ -26,15 +26,21 @@
                 <% low, high = product.price_range %>
                 <%= low == high ? price(low) : "#{price(low)} – #{price(high)}" %>
               </td>
-              <td class="py-3 pr-6">
-                <div class="flex items-center gap-1">
-                  <% product.colors.each do |color| %>
-                    <span class="inline-block w-4 h-4 rounded-full border border-gray-300"
-                          style="background-color: <%= product.swatch_for(color) %>"
-                          title="<%= color %>"></span>
+              <% if product.simple? %>
+                <td class="py-3 pr-6 text-gray-500">Simple item</td>
+              <% else %>
+                <td class="py-3 pr-6">
+                  <%= product.options.map(&:name).join(" · ") %>
+                  <% if (swatch_option = product.swatch_option) %>
+                    <div class="mt-1 flex items-center gap-1">
+                      <% swatch_option.option_values.select(&:swatch?).each do |value| %>
+                        <span title="<%= value.name %>"><%= render "shared/swatch", value: value %></span>
+                      <% end %>
+                    </div>
                   <% end %>
-                </div>
-              </td>
+                </td>
+              <% end %>
+              <td class="py-3 pr-6 text-gray-600"><%= product.variants.size %></td>
               <td class="py-3 pr-6 text-gray-600"><%= product.total_stock %></td>
               <td class="py-3 pr-6">
                 <%= render "shared/status_badge",

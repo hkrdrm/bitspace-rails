@@ -1,0 +1,7 @@
+<%# One option value's swatch dot: its swatch image when it has one, else its hex. %>
+<% size = local_assigns.fetch(:size, "w-4 h-4") %>
+<% if (url = asset_url_if_exists(value.swatch_image)) %>
+  <img src="<%= url %>" alt="" class="inline-block <%= size %> rounded-full border border-gray-300 object-cover">
+<% else %>
+  <span class="inline-block <%= size %> rounded-full border border-gray-300" style="background-color: <%= value.swatch_hex %>"></span>
+<% end %>

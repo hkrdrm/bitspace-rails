@@ -5,13 +5,20 @@ module ApplicationHelper
     number_to_currency((cents || 0) / 100.0)
   end
 
-  # Renders a product's image, or nil (the caller's existing empty placeholder
-  # box) when the filename does not resolve. Product#validate rejects a bad
-  # filename at save time, but a file can still disappear from disk later, so
-  # every render site must guard rather than call image_tag directly.
+  # The served URL for a filename under app/assets/images, or nil when no such
+  # file exists. Every render site guards this way rather than calling
+  # image_tag directly: Propshaft raises on a missing asset, and a file can
+  # disappear after a product was saved.
+  def asset_url_if_exists(filename)
+    return nil if filename.blank? || !Product.asset_exists?(filename)
+
+    asset_path(filename)
+  end
+
+  # Renders a product's image, or nil (the caller's empty placeholder box)
+  # when the filename does not resolve.
   def product_image_tag(product, **options)
-    return nil unless product.image.present?
-    return nil unless Rails.application.assets.load_path.find(product.image)
+    return nil unless asset_url_if_exists(product.image)
 
     image_tag(product.image, **options)
   end

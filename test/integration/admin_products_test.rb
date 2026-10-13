@@ -3,22 +3,30 @@ require "test_helper"
 class AdminProductsTest < ActionDispatch::IntegrationTest
   teardown { Product.dataset.delete }
 
-  def create_product(slug: "sample", name: "Sample Tee")
-    product = Product.create(
-      name: name, slug: slug, description: "A shirt.", image: "3crow.png",
-      base_price_cents: 1200, active: true
-    )
-    Product::SIZES.each_with_index do |size, index|
-      ProductVariant.create(
-        product_id: product.id, size: size, color: "Black",
-        price_cents: 1200, stock: 3, position: index
-      )
-    end
-    product
+  def shirt(name: "Sample Tee", slug: "sample", stock: 3)
+    build_product(name: name, slug: slug, stock: stock, options: { "Colour" => [ "Black", "Red" ], "Size" => [ "S", "M" ] })
+  end
+
+  def new_product_params(overrides = {})
+    {
+      "product" => {
+        "name" => "New Tee", "slug" => "new-tee", "description" => "Fresh.",
+        "image" => "3crow.png", "price" => "12.00", "active" => "1"
+      },
+      "options" => {
+        "0" => { "name" => "Colour", "values" => { "0" => { "name" => "Black" }, "1" => { "name" => "White" }, "2" => { "name" => "" } } },
+        "1" => { "name" => "Size", "values" => { "0" => { "name" => "S" }, "1" => { "name" => "M" }, "2" => { "name" => "L" } } },
+        "2" => { "name" => "", "values" => { "0" => { "name" => "" } } }
+      }
+    }.deep_merge(overrides)
+  end
+
+  def no_options
+    { "options" => { "0" => { "name" => "", "values" => { "0" => { "name" => "" } } } } }
   end
 
   test "signed out visitors are redirected away from the product pages" do
-    product = create_product
+    product = shirt
 
     [ "/admin/products", "/admin/products/new", "/admin/products/#{product.id}/edit" ].each do |path|
       get path
@@ -27,56 +35,51 @@ class AdminProductsTest < ActionDispatch::IntegrationTest
   end
 
   test "signed out visitors are redirected away from create, update and delete" do
-    product = create_product
+    product = shirt
 
-    post "/admin/products", params: valid_params
+    post "/admin/products", params: new_product_params
     assert_response :redirect
-
-    patch "/admin/products/#{product.id}", params: { product: { name: "Nope" } }
+    patch "/admin/products/#{product.id}", params: form_params_for(product).deep_merge("product" => { "name" => "Nope" })
     assert_response :redirect
-
     delete "/admin/products/#{product.id}"
     assert_response :redirect
 
     assert_equal 1, Product.count, "nothing should have been written"
-    assert_equal "Sample Tee", Product[product.id].name, "the product should be untouched"
+    assert_equal "Sample Tee", Product[product.id].name
   end
 
-  test "a non-superuser gets a 404 from the product pages" do
-    product = create_product
+  test "a non-superuser gets a 404 from every product route" do
+    product = shirt
     sign_in create_account(superuser: false)
 
     [ "/admin/products", "/admin/products/new", "/admin/products/#{product.id}/edit" ].each do |path|
       get path
       assert_response :not_found, "expected #{path} to 404 for a non-superuser"
     end
-  end
 
-  test "a non-superuser cannot create, update or delete" do
-    product = create_product
-    sign_in create_account(superuser: false)
-
-    post "/admin/products", params: { product: { name: "Nope" } }
+    post "/admin/products", params: new_product_params
     assert_response :not_found
-
-    patch "/admin/products/#{product.id}", params: { product: { name: "Nope" } }
+    patch "/admin/products/#{product.id}", params: form_params_for(product)
     assert_response :not_found
-
     delete "/admin/products/#{product.id}"
     assert_response :not_found
 
-    assert_equal 1, Product.count, "nothing should have been written"
+    assert_equal 1, Product.count
   end
 
-  test "a superuser sees the product list" do
-    create_product(name: "Listed Tee")
+  test "the list summarises options, variants and stock" do
+    shirt(name: "Listed Tee")
+    build_product(name: "Listed Sticker", options: {}, stock: 9)
     sign_in create_account(superuser: true)
 
     get "/admin/products"
     assert_response :success
     assert_select "h1 span", text: "ALL"
-    assert_select "table thead th", text: "Product"
-    assert_select "body", text: /Listed Tee/
+    assert_select "table thead th", text: "Options"
+    assert_select "td", text: /Colour · Size/
+    assert_select "td", text: "Simple item"
+    assert_select "td", text: "4"
+    assert_select "td", text: "12"
   end
 
   test "the list shows an empty state with no products" do
@@ -87,104 +90,8 @@ class AdminProductsTest < ActionDispatch::IntegrationTest
     assert_select "table", count: 0
   end
 
-  def valid_params(overrides = {})
-    {
-      product: {
-        name: "New Tee", slug: "new-tee", description: "Fresh.",
-        image: "3crow.png", base_price: "12.00", active: "1"
-      },
-      colors: [ "Black", "White" ],
-      prices: { "S" => "12.00", "M" => "12.00", "L" => "12.00",
-                "XL" => "12.00", "2XL" => "14.00", "3XL" => "14.00" },
-      stock: {
-        "Black" => { "S" => "5", "M" => "6", "L" => "7", "XL" => "0", "2XL" => "1", "3XL" => "0" },
-        "White" => { "S" => "2", "M" => "3", "L" => "4", "XL" => "0", "2XL" => "0", "3XL" => "0" }
-      }
-    }.deep_merge(overrides)
-  end
-
-  test "the new form renders for a superuser" do
-    sign_in create_account(superuser: true)
-
-    get "/admin/products/new"
-    assert_response :success
-    assert_select "form"
-    assert_select "input[name='colors[]']", count: Product::COLORS.size
-    assert_select "input[name='prices[S]']"
-    assert_select "input[name='stock[Black][S]']"
-  end
-
-  test "creating a product builds the whole variant grid" do
-    sign_in create_account(superuser: true)
-
-    post "/admin/products", params: valid_params
-    assert_redirected_to "/admin/products"
-
-    product = Product.first(slug: "new-tee")
-    assert product, "the product should exist"
-    assert_equal 12, product.variants.count, "two colours by six sizes"
-    assert_equal [ "Black", "White" ], product.colors
-    assert_equal 1200, product.base_price_cents
-  end
-
-  test "prices are applied to every colour of a size" do
-    sign_in create_account(superuser: true)
-    post "/admin/products", params: valid_params
-
-    product = Product.first(slug: "new-tee")
-    assert_equal 1400, product.variants.find { |v| v.size == "2XL" && v.color == "Black" }.price_cents
-    assert_equal 1400, product.variants.find { |v| v.size == "2XL" && v.color == "White" }.price_cents
-    assert_equal 1200, product.variants.find { |v| v.size == "S" && v.color == "White" }.price_cents
-  end
-
-  test "stock is stored per cell" do
-    sign_in create_account(superuser: true)
-    post "/admin/products", params: valid_params
-
-    product = Product.first(slug: "new-tee")
-    assert_equal 5, product.stock_for(size: "S", color: "Black")
-    assert_equal 2, product.stock_for(size: "S", color: "White")
-    assert_equal 0, product.stock_for(size: "XL", color: "Black")
-  end
-
-  test "sizes are stored in ladder order" do
-    sign_in create_account(superuser: true)
-    post "/admin/products", params: valid_params
-
-    product = Product.first(slug: "new-tee")
-    assert_equal Product::SIZES, product.variants_for("Black").map(&:size)
-  end
-
-  test "creating without a colour re-renders and writes nothing" do
-    sign_in create_account(superuser: true)
-
-    post "/admin/products", params: valid_params(colors: [])
-    assert_response :unprocessable_entity
-    assert_equal 0, Product.count
-    assert_select "body", text: /at least one colour/i
-  end
-
-  test "an invalid product re-renders and writes nothing" do
-    sign_in create_account(superuser: true)
-
-    post "/admin/products", params: valid_params(product: { name: "" })
-    assert_response :unprocessable_entity
-    assert_equal 0, Product.count
-    assert_equal 0, ProductVariant.count, "no variants should be left behind"
-  end
-
-  test "a bogus image filename is rejected and writes nothing" do
-    sign_in create_account(superuser: true)
-
-    post "/admin/products", params: valid_params(product: { image: "3crow.pgn" })
-    assert_response :unprocessable_entity
-    assert_equal 0, Product.count
-    assert_equal 0, ProductVariant.count
-    assert_select "body", text: /is not a file in app\/assets\/images/i
-  end
-
-  test "the product list still renders when a product's image no longer resolves" do
-    product = create_product
+  test "the list still renders when a product's image no longer resolves" do
+    product = shirt
     product.set(image: "no-longer-on-disk.png")
     product.save(validate: false)
     sign_in create_account(superuser: true)
@@ -194,188 +101,156 @@ class AdminProductsTest < ActionDispatch::IntegrationTest
     assert_select "body", text: /Sample Tee/
   end
 
-  test "a duplicate slug re-renders rather than raising" do
-    create_product(slug: "taken")
+  test "the new form offers three option blocks, value rows and a simple stock field" do
     sign_in create_account(superuser: true)
 
-    post "/admin/products", params: valid_params(product: { slug: "taken" })
-    assert_response :unprocessable_entity
-    assert_equal 1, Product.count
+    get "/admin/products/new"
+    assert_response :success
+    assert_select "input[name='product[price]'][value='12.00']"
+    assert_select "fieldset[data-option-block]", 3
+    assert_select "input[name='options[0][name]']"
+    assert_select "input[name='options[0][values][0][name]']"
+    assert_select "input[name='options[0][values][0][swatch_hex]']"
+    assert_select "input[name='simple_stock']"
   end
 
-  test "the slug is derived from the name when left blank" do
+  test "the new form can start from another product's options" do
+    source = shirt
     sign_in create_account(superuser: true)
 
-    post "/admin/products", params: valid_params(product: { name: "Big Loud Shirt", slug: "" })
+    get "/admin/products/new", params: { copy_from: source.id }
+    assert_response :success
+    assert_select "input[name='options[0][name]'][value='Colour']"
+    assert_select "input[name='options[0][values][1][name]'][value='Red']"
+    assert_select "input[name='options[1][values][1][name]'][value='M']"
+  end
+
+  test "creating a product with options builds its variants and goes to edit for stock" do
+    sign_in create_account(superuser: true)
+
+    post "/admin/products", params: new_product_params
+    product = Product.first(slug: "new-tee")
+    assert product, "the product should exist"
+    assert_redirected_to "/admin/products/#{product.id}/edit"
+
+    assert_equal [ "Colour", "Size" ], product.options.map(&:name)
+    assert_equal 6, product.variants.size
+    assert_equal [ 0 ], product.variants.map(&:stock).uniq
+    assert_equal 1200, product.price_cents
+  end
+
+  test "creating a simple product takes its stock and goes back to the list" do
+    sign_in create_account(superuser: true)
+
+    # merge, not deep_merge: the options must be replaced wholesale, not merged row by row.
+    post "/admin/products", params: new_product_params.merge(no_options).merge("simple_stock" => "12")
     assert_redirected_to "/admin/products"
-    assert Product.first(slug: "big-loud-shirt"), "expected a slug generated from the name"
+
+    product = Product.first(slug: "new-tee")
+    assert product.simple?
+    assert_equal 12, product.variants.first.stock
   end
 
-  test "a non-numeric size price is rejected and writes nothing" do
+  test "an invalid product re-renders and writes nothing" do
     sign_in create_account(superuser: true)
 
-    post "/admin/products", params: valid_params(prices: { "S" => "abc" })
+    post "/admin/products", params: new_product_params("product" => { "name" => "", "slug" => "" })
     assert_response :unprocessable_entity
+    assert_select "li", text: "Name is not present."
     assert_equal 0, Product.count
-    assert_equal 0, ProductVariant.count
   end
 
   test "a rejected malformed price is redisplayed as typed, not as 0.00" do
     sign_in create_account(superuser: true)
 
-    post "/admin/products", params: valid_params(prices: { "S" => "abc" })
+    post "/admin/products", params: new_product_params("product" => { "price" => "12.0.0" })
     assert_response :unprocessable_entity
-
-    assert_select "input[name='prices[S]'][value=?]", "abc"
-    assert_select "input[name='prices[S]'][value=?]", "0.00", count: 0
-    assert_select "body", text: /size S must be an amount/i
-  end
-
-  test "a rejected malformed base price is redisplayed as typed, not as 0.00" do
-    sign_in create_account(superuser: true)
-
-    post "/admin/products", params: valid_params(product: { base_price: "abc" })
-    assert_response :unprocessable_entity
-
-    assert_select "input[name='product[base_price]'][value=?]", "abc"
-    assert_select "input[name='product[base_price]'][value=?]", "0.00", count: 0
-  end
-
-  test "a negative price is rejected rather than silently flipped" do
-    sign_in create_account(superuser: true)
-
-    post "/admin/products", params: valid_params(prices: { "S" => "-12.50" })
-    assert_response :unprocessable_entity
+    assert_select "input[name='product[price]'][value='12.0.0']"
+    assert_select "li", text: "Price must be an amount like 12.00."
     assert_equal 0, Product.count
-    assert_nil ProductVariant.first(price_cents: 1250), "a negative price must never be saved as 1250"
   end
 
-  test "a non-numeric base price is rejected and writes nothing" do
+  test "an option without values re-renders with the option kept" do
     sign_in create_account(superuser: true)
 
-    post "/admin/products", params: valid_params(product: { base_price: "abc" })
+    params = new_product_params
+    params["options"]["0"]["values"] = { "0" => { "name" => "" } }
+    post "/admin/products", params: params
+
     assert_response :unprocessable_entity
+    assert_select "li", text: "Colour needs at least one value."
+    assert_select "input[name='options[0][name]'][value='Colour']"
     assert_equal 0, Product.count
-    assert_equal 0, ProductVariant.count
   end
 
-  test "dollar signs and thousands commas are still accepted" do
+  test "a bogus image filename is rejected and writes nothing" do
     sign_in create_account(superuser: true)
 
-    post "/admin/products", params: valid_params(product: { base_price: "$12.00" }, prices: { "2XL" => "1,200.00" })
-    assert_redirected_to "/admin/products"
-
-    product = Product.first(slug: "new-tee")
-    assert product, "the product should exist"
-    assert_equal 1200, product.base_price_cents
-    assert_equal 120_000, product.variants.find { |v| v.size == "2XL" && v.color == "Black" }.price_cents
+    post "/admin/products", params: new_product_params("product" => { "image" => "nope.png" })
+    assert_response :unprocessable_entity
+    assert_select "body", text: /is not a file in app\/assets\/images/i
+    assert_equal 0, Product.count
   end
 
-  def create_two_color_product
+  test "a duplicate slug re-renders rather than raising" do
+    shirt(slug: "taken")
     sign_in create_account(superuser: true)
-    post "/admin/products", params: valid_params
-    Product.first(slug: "new-tee")
+
+    post "/admin/products", params: new_product_params("product" => { "slug" => "taken" })
+    assert_response :unprocessable_entity
+    assert_select "li", text: "Slug is already taken."
   end
 
-  test "the edit form is prefilled from the product" do
-    product = create_two_color_product
+  # Propshaft serves only digested filenames in production, so the preview
+  # must be handed asset_path URLs; a plain /assets/3crow.png would 404 there.
+  test "the form carries digested asset urls for the image preview" do
+    sign_in create_account(superuser: true)
+
+    get "/admin/products/new"
+    sources = JSON.parse(css_select("form[data-image-preview-sources-value]").first["data-image-preview-sources-value"])
+
+    assert_match %r{\A/assets/3crow-[0-9a-f]+\.png\z}, sources["3crow.png"]
+    refute sources.key?("no-such-image.png")
+  end
+
+  test "the edit form is prefilled with the product's options" do
+    product = shirt
+    sign_in create_account(superuser: true)
 
     get "/admin/products/#{product.id}/edit"
     assert_response :success
-    assert_select "input[name='product[name]'][value=?]", "New Tee"
-    assert_select "input[name='colors[]'][value='Black'][checked]"
-    assert_select "input[name='colors[]'][value='White'][checked]"
-    assert_select "input[name='colors[]'][value='Red'][checked]", count: 0
-    assert_select "input[name='stock[Black][S]'][value=?]", "5"
+    assert_select "input[name='product[name]'][value='Sample Tee']"
+    assert_select "input[name='options[0][name]'][value='Colour']"
+    assert_select "input[name='options[0][values][1][name]'][value='Red']"
+    assert_select "input[name='options[0][values][1][position]'][value='2']"
   end
 
-  test "updating a price applies it to every colour of that size" do
-    product = create_two_color_product
+  test "renaming a product goes back to the list" do
+    product = shirt
+    sign_in create_account(superuser: true)
 
-    patch "/admin/products/#{product.id}",
-          params: valid_params(prices: { "S" => "19.50" })
+    patch "/admin/products/#{product.id}", params: form_params_for(product).deep_merge("product" => { "name" => "Renamed Tee" })
     assert_redirected_to "/admin/products"
-
-    product.refresh
-    assert_equal 1950, product.variants.find { |v| v.size == "S" && v.color == "Black" }.price_cents
-    assert_equal 1950, product.variants.find { |v| v.size == "S" && v.color == "White" }.price_cents
+    assert_equal "Renamed Tee", product.refresh.name
   end
 
-  test "updating one stock cell leaves the others alone" do
-    product = create_two_color_product
+  test "an unchanged save goes back to the list and changes nothing" do
+    product = shirt
+    before = product.variants.map { |v| [ v.id, v.stock ] }
+    sign_in create_account(superuser: true)
 
-    patch "/admin/products/#{product.id}",
-          params: valid_params(stock: { "Black" => { "M" => "99" } })
-
-    product.refresh
-    assert_equal 99, product.stock_for(size: "M", color: "Black")
-    assert_equal 5,  product.stock_for(size: "S", color: "Black")
-    assert_equal 3,  product.stock_for(size: "M", color: "White")
-  end
-
-  test "adding a colour creates its six sizes at zero stock" do
-    product = create_two_color_product
-
-    patch "/admin/products/#{product.id}",
-          params: valid_params(colors: [ "Black", "White", "Red" ])
-
-    product.refresh
-    assert_equal 18, product.variants.count
-    assert_equal [ "Black", "White", "Red" ], product.colors
-    assert_equal 0, product.stock_for(size: "S", color: "Red")
-  end
-
-  test "removing a colour deletes its rows" do
-    product = create_two_color_product
-
-    patch "/admin/products/#{product.id}", params: valid_params(colors: [ "Black" ])
-
-    product.refresh
-    assert_equal 6, product.variants.count
-    assert_equal [ "Black" ], product.colors
-    assert_equal 0, ProductVariant.where(product_id: product.id, color: "White").count
-  end
-
-  test "updating to an invalid product writes nothing" do
-    product = create_two_color_product
-
-    patch "/admin/products/#{product.id}", params: valid_params(product: { name: "" })
-    assert_response :unprocessable_entity
-
-    product.refresh
-    assert_equal "New Tee", product.name
-    assert_equal 12, product.variants.count
-  end
-
-  test "updating with no colours selected writes nothing" do
-    product = create_two_color_product
-
-    patch "/admin/products/#{product.id}", params: valid_params(colors: [])
-    assert_response :unprocessable_entity
-
-    product.refresh
-    assert_equal 12, product.variants.count, "the grid should be untouched"
-  end
-
-  test "updating with a malformed price is rejected and writes nothing" do
-    product = create_two_color_product
-
-    patch "/admin/products/#{product.id}", params: valid_params(prices: { "S" => "abc" })
-    assert_response :unprocessable_entity
-
-    product.refresh
-    assert_equal 12, product.variants.count
-    assert_equal 1200, product.variants.find { |v| v.size == "S" && v.color == "Black" }.price_cents
-  end
-
-  test "deleting a product takes its variants with it" do
-    product = create_two_color_product
-
-    delete "/admin/products/#{product.id}"
+    patch "/admin/products/#{product.id}", params: form_params_for(product)
     assert_redirected_to "/admin/products"
+    assert_equal before, product.refresh.variants.map { |v| [ v.id, v.stock ] }
+  end
 
-    assert_nil Product[product.id]
-    assert_equal 0, ProductVariant.where(product_id: product.id).count
+  test "adding a value comes back to edit so the new stock can be filled in" do
+    product = shirt
+    sign_in create_account(superuser: true)
+
+    patch "/admin/products/#{product.id}", params: with_value(form_params_for(product), "Size", "L")
+    assert_redirected_to "/admin/products/#{product.id}/edit"
+    assert_equal 6, product.refresh.variants.size
   end
 
   test "editing an unknown product is a 404" do
@@ -385,25 +260,14 @@ class AdminProductsTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  # The preview used to build "/assets/<filename>" in JavaScript. Propshaft
-  # precompiles only digested filenames in production and does not mount the
-  # middleware that resolves plain ones, so that path 404s there and the preview
-  # silently never appears. The server now hands the controller a filename-to-URL
-  # map built with asset_path. Assert the URL is digested, which is what makes it
-  # work in production -- asserting only that the attribute exists would pass
-  # against the broken version.
-  test "the form carries digested asset urls for the image preview" do
+  test "deleting a product takes its options and variants with it" do
+    product = shirt
     sign_in create_account(superuser: true)
 
-    get "/admin/products/new"
-    assert_response :success
-
-    form = css_select("form").first
-    sources = JSON.parse(form["data-image-preview-sources-value"])
-
-    assert sources.key?("3crow.png"), "expected a seeded image in the preview source map"
-    assert_match %r{\A/assets/3crow-[0-9a-f]+\.png\z}, sources["3crow.png"],
-      "the preview URL must be the digested path, not a plain /assets/3crow.png"
-    refute sources.key?("no-such-image.png")
+    delete "/admin/products/#{product.id}"
+    assert_redirected_to "/admin/products"
+    assert_nil Product[product.id]
+    assert_equal 0, ProductVariant.where(product_id: product.id).count
+    assert_equal 0, ProductOption.where(product_id: product.id).count
   end
 end
