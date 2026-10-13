@@ -39,7 +39,7 @@ Sequel.migration do
       column :slug, "text", :null=>false
       column :description, "text"
       column :image, "text"
-      column :base_price_cents, "integer", :null=>false
+      column :price_cents, "integer", :null=>false
       column :active, "boolean", :default=>true, :null=>false
       column :created_at, "timestamp without time zone", :null=>false
       column :updated_at, "timestamp without time zone", :null=>false
@@ -104,16 +104,47 @@ Sequel.migration do
       column :deleted_at, "timestamp without time zone"
     end
     
+    create_table(:product_options) do
+      primary_key :id
+      foreign_key :product_id, :products, :null=>false, :key=>[:id], :on_delete=>:cascade
+      column :name, "text", :null=>false
+      column :position, "integer", :null=>false
+      
+      index [:product_id, :name], :unique=>true
+    end
+    
     create_table(:product_variants) do
       primary_key :id
       foreign_key :product_id, :products, :null=>false, :key=>[:id], :on_delete=>:cascade
-      column :size, "text", :null=>false
-      column :color, "text", :null=>false
-      column :price_cents, "integer", :null=>false
+      column :options_key, "text", :null=>false
+      column :price_override_cents, "integer"
       column :stock, "integer", :default=>0, :null=>false
+      column :sku, "text"
       column :position, "integer", :null=>false
       
-      index [:product_id, :size, :color], :unique=>true
+      index [:product_id, :options_key], :unique=>true
+      index [:sku], :name=>:product_variants_sku_key, :unique=>true
+    end
+    
+    create_table(:option_values) do
+      primary_key :id
+      foreign_key :product_option_id, :product_options, :null=>false, :key=>[:id], :on_delete=>:cascade
+      column :name, "text", :null=>false
+      column :position, "integer", :null=>false
+      column :swatch_hex, "text"
+      column :swatch_image, "text"
+      column :image, "text"
+      
+      index [:product_option_id, :name], :unique=>true
+    end
+    
+    create_table(:variant_option_values) do
+      foreign_key :product_variant_id, :product_variants, :null=>false, :key=>[:id], :on_delete=>:cascade
+      foreign_key :option_value_id, :option_values, :null=>false, :key=>[:id], :on_delete=>:cascade
+      
+      primary_key [:product_variant_id, :option_value_id]
+      
+      index [:option_value_id]
     end
   end
 end
@@ -125,5 +156,6 @@ self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('2025051317241
 self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('20260921120000_add_superuser_to_accounts.rb')"
 self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('20260921130000_create_page_views.rb')"
 self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('20260921140000_create_products.rb')"
+self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('20261013120000_rebuild_products_with_options.rb')"
                 end
               end
