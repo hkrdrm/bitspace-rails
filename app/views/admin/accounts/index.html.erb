@@ -1,39 +1,48 @@
+<%
+  badges = { verified: [ "Verified", :green ], unverified: [ "Unverified", :orange ], closed: [ "Closed", :gray ] }
+  filters = [ [ "All", nil ], [ "Verified", "verified" ], [ "Unverified", "unverified" ], [ "Closed", "closed" ] ]
+%>
 <div class="bg-white text-ink">
   <%= render "shared/page_header", heading_top: "ALL", heading_bottom: "ACCOUNTS." %>
 
   <%= render "admin/tabs" %>
 
   <section class="max-w-7xl mx-auto px-6 py-12">
-    <%= render layout: "shared/panel", locals: { title: "Accounts", subtitle: "128 total, 104 verified" } do %>
+    <%= render layout: "shared/panel", locals: { title: "Accounts", subtitle: "#{@total} total, #{@verified} verified" } do %>
       <div class="mb-6 flex flex-wrap items-center gap-4">
-        <input type="search" placeholder="Search by email"
-               class="w-full max-w-xs px-3 py-2 text-sm text-ink bg-white border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-brand-green focus:ring-brand-green/40">
-        <div class="flex flex-wrap gap-2">
-          <% [ "All", "Verified", "Unverified", "Closed" ].each_with_index do |filter, i| %>
-            <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest <%= i.zero? ? "bg-brand-green text-white" : "bg-gray-100 text-gray-600" %>"><%= filter %></span>
+        <%= form_with url: admin_accounts_path, method: :get, class: "w-full max-w-xs" do %>
+          <% if @status %><input type="hidden" name="status" value="<%= @status %>"><% end %>
+          <label for="account_search" class="sr-only">Search by email</label>
+          <input id="account_search" type="search" name="q" value="<%= @query %>" placeholder="Search by email"
+                 class="w-full px-3 py-2 text-sm text-ink bg-white border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-brand-green focus:ring-brand-green/40">
+        <% end %>
+        <nav class="flex flex-wrap gap-2" aria-label="Filter by status">
+          <% filters.each do |label, key| %>
+            <% current = @status == key %>
+            <%= link_to label, admin_accounts_path(q: @query.presence, status: key),
+                  "aria-current": (current ? "page" : nil),
+                  class: "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest #{current ? "bg-brand-green text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}" %>
           <% end %>
-        </div>
+        </nav>
       </div>
 
-      <%= render layout: "shared/data_table", locals: { headers: [ "Email", "Status", "Role", "Created", "" ] } do %>
-        <%
-          rows = [
-            [ "freddie@queen.com",  "Verified",   :green,  "Superuser", "2026-01-14" ],
-            [ "brian@queen.com",    "Verified",   :green,  "Customer",  "2026-02-02" ],
-            [ "roger@queen.com",    "Unverified", :orange, "Customer",  "2026-08-30" ],
-            [ "john@queen.com",     "Closed",     :gray,   "Customer",  "2025-11-19" ]
-          ]
-        %>
-        <% rows.each do |email, status, tone, role, created| %>
-          <tr>
-            <td class="py-3 pr-6 font-bold"><%= email %></td>
-            <td class="py-3 pr-6"><%= render "shared/status_badge", label: status, tone: tone %></td>
-            <td class="py-3 pr-6 text-gray-600"><%= role %></td>
-            <td class="py-3 pr-6 text-gray-600 whitespace-nowrap"><%= created %></td>
-            <td class="py-3 text-right">
-              <span class="font-bold text-xs uppercase tracking-widest text-brand-green">Manage</span>
-            </td>
-          </tr>
+      <% if @accounts.empty? %>
+        <%= render "shared/empty_state", message: "No accounts match." %>
+      <% else %>
+        <%= render layout: "shared/data_table", locals: { headers: [ "Email", "Status", "Role", "Created" ] } do %>
+          <% @accounts.each do |account| %>
+            <% label, tone = badges.fetch(account.status, [ account.status.to_s.humanize, :gray ]) %>
+            <tr>
+              <td class="py-3 pr-6 font-bold"><%= account.email %></td>
+              <td class="py-3 pr-6"><%= render "shared/status_badge", label: label, tone: tone %></td>
+              <td class="py-3 pr-6 text-gray-600"><%= account.superuser? ? "Superuser" : "Customer" %></td>
+              <td class="py-3 pr-6 text-gray-600 whitespace-nowrap"><%= account.created_at&.to_date&.iso8601 || "—" %></td>
+            </tr>
+          <% end %>
+        <% end %>
+
+        <% if @matching > @accounts.size %>
+          <p class="mt-4 text-xs text-gray-500">Showing the newest <%= @accounts.size %> of <%= @matching %>. Search to narrow it down.</p>
         <% end %>
       <% end %>
     <% end %>

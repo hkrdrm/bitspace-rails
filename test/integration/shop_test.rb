@@ -29,7 +29,7 @@ class ShopTest < ActionDispatch::IntegrationTest
     shirt(slug: "hidden", name: "Hidden Tee", active: false)
 
     get "/shop"
-    assert_select "body", text: /Hidden Tee/, count: 0
+    refute_selector_text "body", /Hidden Tee/
   end
 
   test "the catalog and product page still render when an image no longer resolves" do
@@ -60,7 +60,7 @@ class ShopTest < ActionDispatch::IntegrationTest
     get "/shop"
     assert_select "[title='Red']", 1
     assert_select "body", text: /2 colours/
-    assert_select "body", text: /1 colour\b/, count: 0
+    refute_selector_text "body", /1 colour\b/
   end
 
   test "the product page lists every variant with its price" do
@@ -145,7 +145,7 @@ class ShopTest < ActionDispatch::IntegrationTest
     build_product(name: "Bold Tee", slug: "bold", options: { "Style" => [ "<b>Bold</b>", "Plain" ] })
 
     get "/shop/bold"
-    assert_select "b", text: "Bold", count: 0
+    refute_selector_text "b", "Bold"
     assert_includes response.body, "&lt;b&gt;Bold&lt;/b&gt;"
   end
 

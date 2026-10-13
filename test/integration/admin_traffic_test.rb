@@ -46,7 +46,7 @@ class AdminTrafficTest < ActionDispatch::IntegrationTest
 
     assert_select "td", text: "/"
     assert_select "td", text: "/contact"
-    assert_select "td", text: "/old", count: 0, message: "rows outside the window must not appear"
+    refute_selector_text "td", "/old", "rows outside the window must not appear"
   end
 
   test "non-superusers cannot reach it" do

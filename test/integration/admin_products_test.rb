@@ -393,7 +393,7 @@ class AdminProductsTest < ActionDispatch::IntegrationTest
 
     get "/admin/products/#{sticker.id}/edit"
     assert_select "input[name='variants[#{sticker.variants.first.id}][stock]'][value='8']"
-    assert_select "th", text: "Variant", count: 0
+    refute_selector_text "th", "Variant"
   end
 
   test "the edit page loads every variant's values in one query, not one per variant" do

@@ -6,6 +6,7 @@ Sequel.migration do
       column :status, "integer", :default=>1, :null=>false
       column :password_hash, "text"
       column :superuser, "boolean", :default=>false, :null=>false
+      column :created_at, "timestamp without time zone", :default=>Sequel::CURRENT_TIMESTAMP
     end
     
     create_table(:comics) do
@@ -157,5 +158,6 @@ self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('2026092112000
 self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('20260921130000_create_page_views.rb')"
 self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('20260921140000_create_products.rb')"
 self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('20261013120000_rebuild_products_with_options.rb')"
+self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('20261013170000_add_created_at_to_accounts.rb')"
                 end
               end

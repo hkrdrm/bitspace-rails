@@ -8,27 +8,37 @@
 
   <section class="max-w-7xl mx-auto px-6 py-12 space-y-10">
     <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-      <%= render "shared/stat_tile", label: "Accounts",  value: "128", delta: "+6 this week" %>
-      <%= render "shared/stat_tile", label: "Verified",  value: "104" %>
-      <%= render "shared/stat_tile", label: "Orders",    value: "42",  delta: "+3 this week" %>
-      <%= render "shared/stat_tile", label: "Revenue",   value: "$1,860" %>
+      <%= render "shared/stat_tile", label: "Accounts", value: @accounts, delta: "+#{@new_accounts} this week" %>
+      <%= render "shared/stat_tile", label: "Verified", value: @verified %>
+      <%= render "shared/stat_tile", label: "Products live", value: @products_live %>
+      <%= render "shared/stat_tile", label: "Page views", value: @views, delta: "Last 7 days" %>
     </div>
 
     <div class="grid md:grid-cols-2 gap-8">
       <%= render layout: "shared/panel", locals: { title: "Traffic", subtitle: "Last 7 days" } do %>
-        <p class="text-sm text-gray-600">
-          Page views are being recorded. See the
+        <p class="text-sm text-gray-600" data-traffic-summary>
+          <%= pluralize(@views, "page view") %> this week: <%= @humans %> from people, <%= @bots %> from bots.
+        </p>
+        <p class="mt-3 text-sm text-gray-600">
+          See the
           <%= link_to "traffic page", admin_traffic_path, class: "font-bold text-brand-green underline decoration-2 underline-offset-4" %>
           for the breakdown.
         </p>
       <% end %>
 
       <%= render layout: "shared/panel", locals: { title: "Recent activity" } do %>
-        <ul class="space-y-3 text-sm text-gray-700">
-          <li class="flex justify-between gap-4"><span>New account registered</span><span class="text-gray-400">2h ago</span></li>
-          <li class="flex justify-between gap-4"><span>Order #1042 marked shipped</span><span class="text-gray-400">5h ago</span></li>
-          <li class="flex justify-between gap-4"><span>Order #1041 paid</span><span class="text-gray-400">Yesterday</span></li>
-        </ul>
+        <% if @activity.empty? %>
+          <p class="text-sm text-gray-600">Nothing yet.</p>
+        <% else %>
+          <ul class="space-y-3 text-sm text-gray-700" data-activity>
+            <% @activity.each do |event| %>
+              <li class="flex justify-between gap-4">
+                <span class="min-w-0 truncate"><%= event[:text] %></span>
+                <span class="flex-shrink-0 text-gray-400"><%= time_ago_in_words(event[:at]) %> ago</span>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
       <% end %>
     </div>
   </section>

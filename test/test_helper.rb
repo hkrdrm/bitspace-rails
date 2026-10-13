@@ -127,4 +127,14 @@ class ActionDispatch::IntegrationTest
   def sign_in(account, password: "password123")
     post "/login", params: { email: account.email, password: password }
   end
+
+  # assert_select with both text: and count: 0 passes even when the text is on
+  # the page, so absence is checked against the matched elements' text here.
+  def refute_selector_text(selector, pattern, message = nil)
+    matches = css_select(selector).select do |element|
+      pattern.is_a?(Regexp) ? element.text.match?(pattern) : element.text.strip == pattern
+    end
+    assert_empty matches.map { |element| element.text.squish[0, 80] },
+      message || "expected no #{selector} with text #{pattern.inspect}"
+  end
 end
