@@ -242,4 +242,148 @@ class ProductEditorTest < ActiveSupport::TestCase
     assert_equal [ "Size" ], editor.option_inputs.map { |option| option[:name] }
     assert_equal [ "S", "M" ], editor.option_inputs.first[:values].map { |value| value[:name] }
   end
+
+  test "removing a value that still has stock stops and lists what would be lost" do
+    product = build_product(name: "Loss Tee", options: { "Colour" => [ "Black", "Red" ], "Size" => [ "S" ] }, stock: 4)
+    params = without_value(form_params_for(product), "Colour", "Red")
+    params["product"]["name"] = "Renamed Tee"
+
+    editor = ProductEditor.new(product, params)
+    refute editor.save
+
+    assert_equal [ ProductEditor::Loss.new(label: "Red / S", stock: 4) ], editor.pending_loss
+    assert_equal 2, ProductVariant.where(product_id: product.id).count
+    assert_equal "Loss Tee", Product[product.id].name, "nothing may be written, not even the product fields"
+  end
+
+  test "confirming the loss goes ahead" do
+    product = build_product(options: { "Colour" => [ "Black", "Red" ], "Size" => [ "S" ] }, stock: 4)
+    params = without_value(form_params_for(product), "Colour", "Red").merge("confirm_loss" => "1")
+
+    editor = ProductEditor.new(product, params)
+    assert editor.save, editor.errors.join(" ")
+    assert_equal [ "Black / S" ], product.refresh.variants.map(&:label)
+  end
+
+  test "renaming a value counts as removing it" do
+    product = build_product(options: { "Colour" => [ "Black" ] }, stock: 2)
+    params = form_params_for(product)
+    params["options"]["0"]["values"]["0"]["name"] = "Jet Black"
+
+    editor = ProductEditor.new(product, params)
+    refute editor.save
+    assert_equal [ "Black" ], editor.pending_loss.map(&:label)
+  end
+
+  test "adding a whole option replaces every variant, so the loss check applies" do
+    product = build_product(options: { "Size" => [ "S", "M" ] }, stock: 1)
+    params = form_params_for(product)
+    params["options"]["1"] = { "name" => "Colour", "values" => { "0" => { "name" => "Black" } } }
+
+    editor = ProductEditor.new(product, params)
+    refute editor.save
+    assert_equal [ "S", "M" ], editor.pending_loss.map(&:label)
+
+    # The submitted stock fields still name the old variant ids; they must be
+    # ignored rather than crash once those variants are gone.
+    editor = ProductEditor.new(product.refresh, params.merge("confirm_loss" => "1"))
+    assert editor.save, editor.errors.join(" ")
+    assert_equal [ "S / Black", "M / Black" ], product.refresh.variants.map(&:label)
+    assert_equal [ 0, 0 ], product.variants.map(&:stock)
+  end
+
+  test "removing every option collapses to one simple variant" do
+    product = build_product(name: "Collapse Tee", options: { "Size" => [ "S", "M" ] }, stock: 0)
+
+    editor = ProductEditor.new(product, form_params_for(product).merge("options" => {}))
+    assert editor.save, editor.errors.join(" ")
+
+    assert product.refresh.simple?
+    assert_equal [ "Collapse Tee" ], product.variants.map(&:label)
+    assert_equal 0, ProductOption.where(product_id: product.id).count
+  end
+
+  test "stock, price override and SKU are saved per variant" do
+    product = build_product(options: { "Size" => [ "S", "M" ] }, stock: 1)
+    small, medium = product.variants
+    params = form_params_for(product)
+    params["variants"][small.id.to_s] = { "stock" => "9", "price_override" => "14.00", "sku" => " CROW-S " }
+
+    editor = ProductEditor.new(product, params)
+    assert editor.save, editor.errors.join(" ")
+
+    small.refresh
+    medium.refresh
+    assert_equal [ 9, 1400, "CROW-S" ], [ small.stock, small.price_override_cents, small.sku ]
+    assert_equal [ 1, nil, nil ], [ medium.stock, medium.price_override_cents, medium.sku ]
+    assert_equal 1400, small.price_cents
+  end
+
+  test "a blank price override goes back to the product price" do
+    product = build_product(options: { "Size" => [ "S" ] })
+    variant = product.variants.first
+    variant.update(price_override_cents: 1400)
+    params = form_params_for(product.refresh)
+    params["variants"][variant.id.to_s]["price_override"] = ""
+
+    assert ProductEditor.new(product, params).save
+    assert_nil variant.refresh.price_override_cents
+  end
+
+  test "a malformed override or stock is reported against its variant and writes nothing" do
+    product = build_product(options: { "Size" => [ "S", "M" ] }, stock: 1)
+    small, medium = product.variants
+    params = form_params_for(product)
+    params["variants"][small.id.to_s]["price_override"] = "free"
+    params["variants"][medium.id.to_s]["stock"] = "-3"
+
+    editor = ProductEditor.new(product, params)
+    refute editor.save
+
+    assert_includes editor.errors, "Price for S must be an amount like 12.00, or blank to use the product price."
+    assert_includes editor.errors, "Stock for M must be a whole number from 0 to 1,000,000."
+    assert_equal [ 1, 1 ], product.refresh.variants.map(&:stock)
+  end
+
+  test "variant ids from another product are ignored" do
+    mine = build_product(options: { "Size" => [ "S" ] }, stock: 1)
+    theirs = build_product(options: { "Size" => [ "S" ] }, stock: 1)
+    params = form_params_for(mine)
+    params["variants"][theirs.variants.first.id.to_s] = { "stock" => "99" }
+
+    assert ProductEditor.new(mine, params).save
+    assert_equal 1, theirs.variants.first.refresh.stock
+  end
+
+  test "the same SKU on two variants in one save is an error, not a crash" do
+    product = build_product(options: { "Size" => [ "S", "M" ] })
+    params = form_params_for(product)
+    product.variants.each { |variant| params["variants"][variant.id.to_s]["sku"] = "DUP" }
+
+    editor = ProductEditor.new(product, params)
+    refute editor.save
+
+    assert_includes editor.errors, "M: Sku is already taken."
+    assert_equal [ nil, nil ], product.refresh.variants.map(&:sku)
+  end
+
+  test "a new simple product takes the stock typed on the new form" do
+    editor = ProductEditor.new(Product.new, { "product" => product_fields, "simple_stock" => "50" })
+    assert editor.save, editor.errors.join(" ")
+    assert_equal 50, editor.product.variants.first.stock
+  end
+
+  test "simple stock is ignored when the product has options" do
+    editor = ProductEditor.new(Product.new, {
+      "product" => product_fields, "options" => [ option("Size", "S") ], "simple_stock" => "50"
+    })
+    assert editor.save, editor.errors.join(" ")
+    assert_equal 0, editor.product.variants.first.stock
+  end
+
+  test "malformed simple stock is an error" do
+    editor = ProductEditor.new(Product.new, { "product" => product_fields, "simple_stock" => "lots" })
+    refute editor.save
+    assert_includes editor.errors, "Stock must be a whole number from 0 to 1,000,000."
+  end
 end

@@ -81,18 +81,22 @@ class ProductEditor
     @was_new = product.new?
     assign_product_fields
     validate_options
+    validate_simple_stock
     validate_variant_count
     validate_product
+    updates = parse_variant_updates
     return false if errors.any?
 
     combos = combinations
     doomed = doomed_variants(combos)
+    return false if unconfirmed_loss?(doomed)
 
     Product.db.transaction do
       product.save
       ProductVariant.where(id: doomed.map(&:id)).delete if doomed.any?
       value_ids = sync_options
       sync_variants(combos, value_ids, doomed)
+      apply_variant_updates(updates, doomed)
     end
 
     @variants_changed = doomed.any? || created_count.positive?
@@ -194,6 +198,80 @@ class ProductEditor
 
       messages.each { |message| errors << "#{attribute.to_s.humanize} #{message}." }
     end
+  end
+
+  def validate_simple_stock
+    return if simple_stock_input.empty? || whole_stock?(simple_stock_input)
+
+    errors << "Stock must be a whole number from 0 to #{MAX_STOCK.to_fs(:delimited)}."
+  end
+
+  def whole_stock?(text)
+    text.match?(WHOLE) && text.to_i <= MAX_STOCK
+  end
+
+  # Per-variant fields from the variants table, keyed by variant id. Ids that
+  # do not belong to this product are ignored, so a crafted form cannot touch
+  # another product's stock. A field missing from the submission is left alone.
+  def parse_variant_updates
+    variant_inputs.each_with_object({}) do |(id, fields), updates|
+      label = existing_labels[id.to_i] or next
+      update = {}
+
+      if fields.key?("stock")
+        stock = fields["stock"].strip
+        if stock.empty?
+          update[:stock] = 0
+        elsif whole_stock?(stock)
+          update[:stock] = stock.to_i
+        else
+          errors << "Stock for #{label} must be a whole number from 0 to #{MAX_STOCK.to_fs(:delimited)}."
+        end
+      end
+
+      if fields.key?("price_override")
+        text = fields["price_override"].strip
+        if text.empty?
+          update[:price_override_cents] = nil
+        elsif (amount = cents(text))
+          update[:price_override_cents] = amount
+        else
+          errors << "Price for #{label} must be an amount like 12.00, or blank to use the product price."
+        end
+      end
+
+      update[:sku] = fields["sku"].strip.presence if fields.key?("sku")
+      updates[id.to_i] = update
+    end
+  end
+
+  # Records every variant this save would delete while it holds stock, and
+  # refuses unless the admin ticked the confirmation box.
+  def unconfirmed_loss?(doomed)
+    @pending_loss = doomed.select { |variant| variant.stock.positive? }
+                          .map { |variant| Loss.new(label: existing_labels.fetch(variant.id), stock: variant.stock) }
+    return false if pending_loss.empty? || @params["confirm_loss"] == "1"
+
+    errors << "This change deletes variants that still have stock. Tick the box below to confirm."
+    true
+  end
+
+  def apply_variant_updates(updates, doomed)
+    doomed_ids = doomed.map(&:id)
+
+    existing_variants.each do |variant|
+      update = updates[variant.id]
+      next if update.blank? || doomed_ids.include?(variant.id)
+
+      variant.update(update)
+    end
+  end
+
+  # A brand-new simple variant takes the stock typed on the new-product form.
+  # Every other new variant starts at zero, because the admin had nowhere to
+  # type its stock yet.
+  def initial_stock(pairs)
+    pairs.empty? && whole_stock?(simple_stock_input) ? simple_stock_input.to_i : 0
   end
 
   # Every combination of one value per option, in option order and then value
@@ -299,7 +377,7 @@ class ProductEditor
       if (variant = survivors[key])
         variant.update(position: position) unless variant.position == position
       else
-        variant = ProductVariant.create(product_id: product.id, options_key: key, position: position, stock: 0)
+        variant = ProductVariant.create(product_id: product.id, options_key: key, position: position, stock: initial_stock(pairs))
         Product.db[:variant_option_values].import(
           [ :product_variant_id, :option_value_id ], ids.map { |id| [ variant.id, id ] }
         )
