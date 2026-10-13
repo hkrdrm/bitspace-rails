@@ -16,18 +16,15 @@
             </div>
             <div class="p-5">
               <h2 class="font-display text-2xl tracking-tight"><%= product.name %></h2>
-              <% low, high = product.price_range %>
-              <p class="mt-1 font-bold text-sm">
-                <%= low == high ? price(low) : "#{price(low)} – #{price(high)}" %>
-              </p>
-              <% if product.colors.many? %>
+              <p class="mt-1 font-bold text-sm"><%= price_label(product) %></p>
+              <% swatch_option = product.swatch_option %>
+              <% swatches = swatch_option ? swatch_option.option_values.select(&:swatch?) : [] %>
+              <% if swatches.many? %>
                 <div class="mt-3 flex items-center gap-2">
-                  <% product.colors.each do |color| %>
-                    <span class="inline-block w-4 h-4 rounded-full border border-gray-300"
-                          style="background-color: <%= product.swatch_for(color) %>"
-                          title="<%= color %>"></span>
+                  <% swatches.each do |value| %>
+                    <span title="<%= value.name %>"><%= render "shared/swatch", value: value %></span>
                   <% end %>
-                  <span class="text-xs text-gray-500"><%= product.colors.size %> colours</span>
+                  <span class="text-xs text-gray-500"><%= pluralize(swatches.size, swatch_option.name.downcase) %></span>
                 </div>
               <% end %>
             </div>
