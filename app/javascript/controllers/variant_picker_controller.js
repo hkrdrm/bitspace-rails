@@ -44,6 +44,9 @@ export default class extends Controller {
       button.classList.toggle("border-gray-200", !chosen)
       button.classList.toggle("line-through", !available)
       button.classList.toggle("text-gray-400", !available)
+      // Strikethrough is invisible to a screen reader, so say it in words too.
+      const availability = button.querySelector("[data-availability]")
+      if (availability) availability.textContent = available ? "" : " (sold out)"
     })
 
     const variant = this.selectedVariant()

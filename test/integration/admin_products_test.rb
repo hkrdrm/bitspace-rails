@@ -348,6 +348,9 @@ class AdminProductsTest < ActionDispatch::IntegrationTest
     assert_select "[data-pending-loss] li", text: /Red \/ S — 3 in stock/
     assert_select "[data-pending-loss] li", text: /Red \/ M — 3 in stock/
     assert_select "input[type='checkbox'][name='confirm_loss']"
+    product.variants.select { |variant| variant.label.start_with?("Red") }.each do |variant|
+      assert_select "input[type='hidden'][name='confirmed_loss[]'][value='#{variant.id}']"
+    end
     assert_equal 4, product.refresh.variants.size
   end
 
@@ -355,7 +358,8 @@ class AdminProductsTest < ActionDispatch::IntegrationTest
     product = shirt
     sign_in create_account(superuser: true)
 
-    params = without_value(form_params_for(product), "Colour", "Red").merge("confirm_loss" => "1")
+    red_ids = product.variants.select { |variant| variant.label.start_with?("Red") }.map { |variant| variant.id.to_s }
+    params = without_value(form_params_for(product), "Colour", "Red").merge("confirm_loss" => "1", "confirmed_loss" => red_ids)
     patch "/admin/products/#{product.id}", params: params
     assert_redirected_to "/admin/products/#{product.id}/edit"
     assert_equal [ "Black / S", "Black / M" ], product.refresh.variants.map(&:label)
@@ -390,5 +394,23 @@ class AdminProductsTest < ActionDispatch::IntegrationTest
     get "/admin/products/#{sticker.id}/edit"
     assert_select "input[name='variants[#{sticker.variants.first.id}][stock]'][value='8']"
     assert_select "th", text: "Variant", count: 0
+  end
+
+  test "the edit page loads every variant's values in one query, not one per variant" do
+    product = shirt
+    sign_in create_account(superuser: true)
+
+    log = StringIO.new
+    logger = Logger.new(log)
+    Product.db.loggers << logger
+    begin
+      get "/admin/products/#{product.id}/edit"
+    ensure
+      Product.db.loggers.delete(logger)
+    end
+
+    assert_response :success
+    lookups = log.string.lines.count { |line| line.include?("variant_option_values") }
+    assert_operator lookups, :<=, 1, "expected one eager query for the variants' values, got #{lookups}"
   end
 end

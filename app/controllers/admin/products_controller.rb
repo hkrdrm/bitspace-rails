@@ -54,8 +54,12 @@ module Admin
     private
 
     # A 404 rather than a redirect, matching how the admin gate hides itself.
+    # Options, values and each variant's values are loaded up front: the form
+    # labels every variant, and lazy loading would cost a round trip per row.
     def find_product!
-      Product[params[:id].to_i] or raise ActionController::RoutingError, "Not Found"
+      Product.where(id: params[:id].to_i)
+        .eager(options: :option_values, variants: :option_values)
+        .all.first or raise ActionController::RoutingError, "Not Found"
     end
 
     def copy_sources
@@ -65,7 +69,7 @@ module Admin
     # ProductEditor reads every key it uses by name and never mass-assigns, so
     # handing it the raw hash is safe. Only the keys the form sends pass.
     def editor_params
-      params.to_unsafe_h.slice("product", "options", "variants", "confirm_loss", "simple_stock")
+      params.to_unsafe_h.slice("product", "options", "variants", "confirm_loss", "confirmed_loss", "simple_stock")
     end
   end
 end

@@ -30,7 +30,7 @@
           <% @product.options.each do |option| %>
             <% values = option.option_values %>
             <div>
-              <p class="text-xs font-bold uppercase tracking-widest text-gray-500"><%= option.name %></p>
+              <p id="option-<%= option.id %>-label" class="text-xs font-bold uppercase tracking-widest text-gray-500"><%= option.name %></p>
               <% if values.one? %>
                 <p class="mt-2 flex items-center gap-2 text-sm font-bold"
                    data-variant-picker-target="fixed" data-option-id="<%= option.id %>" data-value-id="<%= values.first.id %>">
@@ -38,19 +38,19 @@
                   <span><%= values.first.name %></span>
                 </p>
               <% else %>
-                <div class="mt-2 flex flex-wrap gap-2">
+                <div class="mt-2 flex flex-wrap gap-2" role="group" aria-labelledby="option-<%= option.id %>-label">
                   <% values.each do |value| %>
                     <button type="button" aria-pressed="false"
                             data-variant-picker-target="button" data-action="variant-picker#choose"
                             data-option-id="<%= option.id %>" data-value-id="<%= value.id %>"
-                            class="flex items-center gap-2 px-3 py-2 border-2 border-gray-200 rounded-lg text-sm font-bold"><%= render("shared/swatch", value: value) if value.swatch? %><%= value.name %></button>
+                            class="flex items-center gap-2 px-3 py-2 border-2 border-gray-200 rounded-lg text-sm font-bold"><%= render("shared/swatch", value: value) if value.swatch? %><%= value.name %><span class="sr-only" data-availability></span></button>
                   <% end %>
                 </div>
               <% end %>
             </div>
           <% end %>
 
-          <div class="flex items-baseline justify-between gap-4 border-t-2 border-gray-200 pt-4">
+          <div class="flex items-baseline justify-between gap-4 border-t-2 border-gray-200 pt-4" aria-live="polite">
             <span class="font-display text-2xl" data-variant-picker-target="price"></span>
             <span class="text-xs font-bold uppercase tracking-widest" data-variant-picker-target="status"></span>
           </div>

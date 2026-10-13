@@ -160,4 +160,15 @@ class ShopTest < ActionDispatch::IntegrationTest
     get "/shop/draft"
     assert_response :not_found
   end
+
+  test "the picker is described to assistive technology" do
+    shirt(slug: "described", colours: [ "Black", "Red" ])
+
+    get "/shop/described"
+    groups = css_select("[role='group'][aria-labelledby]")
+    assert_equal 2, groups.size, "one labelled group per option with several values"
+    groups.each { |group| assert_select "##{group['aria-labelledby']}", 1 }
+    assert_select "[aria-live='polite'] [data-variant-picker-target='status']"
+    assert_select "button[data-variant-picker-target='button'] .sr-only[data-availability]", 5
+  end
 end

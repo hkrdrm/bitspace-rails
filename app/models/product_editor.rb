@@ -9,9 +9,12 @@ class ProductEditor
   MONEY = /\A\d+(\.\d{1,2})?\z/
   WHOLE = /\A\d+\z/
   MAX_STOCK = 1_000_000
+  # $100,000. Anything above is a typo, and far above it would overflow the
+  # integer column and crash the save instead of reporting an error.
+  MAX_PRICE_CENTS = 10_000_000
 
   # A variant this save would delete while it still holds stock.
-  Loss = Data.define(:label, :stock)
+  Loss = Data.define(:variant_id, :label, :stock)
 
   attr_reader :product, :errors, :pending_loss, :option_inputs, :variant_inputs,
               :price_input, :simple_stock_input, :created_count
@@ -249,11 +252,21 @@ class ProductEditor
   # refuses unless the admin ticked the confirmation box.
   def unconfirmed_loss?(doomed)
     @pending_loss = doomed.select { |variant| variant.stock.positive? }
-                          .map { |variant| Loss.new(label: existing_labels.fetch(variant.id), stock: variant.stock) }
-    return false if pending_loss.empty? || @params["confirm_loss"] == "1"
+                          .map { |variant| Loss.new(variant_id: variant.id, label: existing_labels.fetch(variant.id), stock: variant.stock) }
+    return false if pending_loss.empty? || confirmed?(pending_loss)
 
     errors << "This change deletes variants that still have stock. Tick the box below to confirm."
     true
+  end
+
+  # The confirmation names the variants its panel listed, and covers only
+  # those: a resubmit that would also delete something new has to be shown
+  # and confirmed again.
+  def confirmed?(losses)
+    return false unless @params["confirm_loss"] == "1"
+
+    listed = Array(@params["confirmed_loss"]).map(&:to_i)
+    losses.all? { |loss| listed.include?(loss.variant_id) }
   end
 
   def apply_variant_updates(updates, doomed)
@@ -415,6 +428,7 @@ class ProductEditor
     text = value.to_s.strip.delete("$").delete(",")
     return nil unless text.match?(MONEY)
 
-    (BigDecimal(text) * 100).round
+    amount = (BigDecimal(text) * 100).round
+    amount if amount <= MAX_PRICE_CENTS
   end
 end

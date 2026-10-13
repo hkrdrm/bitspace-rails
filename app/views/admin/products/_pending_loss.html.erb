@@ -6,7 +6,10 @@
   </p>
   <ul class="mt-3 space-y-1 text-sm text-gray-700">
     <% @editor.pending_loss.each do |loss| %>
-      <li><span class="font-bold"><%= loss.label %></span> — <%= loss.stock %> in stock</li>
+      <li>
+        <span class="font-bold"><%= loss.label %></span> — <%= loss.stock %> in stock
+        <input type="hidden" name="confirmed_loss[]" value="<%= loss.variant_id %>">
+      </li>
     <% end %>
   </ul>
   <label class="mt-4 flex items-center gap-3 text-sm font-bold">

@@ -18,6 +18,12 @@ class ProductEditorTest < ActiveSupport::TestCase
     ProductEditor.new(Product.new, { "product" => product_fields(**fields), "options" => options })
   end
 
+  # What the form submits after the admin ticks the box under a refused save's
+  # loss panel: the confirmation plus the ids that panel listed.
+  def confirming(params, refused)
+    params.merge("confirm_loss" => "1", "confirmed_loss" => refused.pending_loss.map { |loss| loss.variant_id.to_s })
+  end
+
   test "a product with no options gets one simple variant" do
     editor = create
     assert editor.save, editor.errors.join(" ")
@@ -251,18 +257,51 @@ class ProductEditorTest < ActiveSupport::TestCase
     editor = ProductEditor.new(product, params)
     refute editor.save
 
-    assert_equal [ ProductEditor::Loss.new(label: "Red / S", stock: 4) ], editor.pending_loss
+    red = variant_named(product, "Red / S")
+    assert_equal [ ProductEditor::Loss.new(variant_id: red.id, label: "Red / S", stock: 4) ], editor.pending_loss
     assert_equal 2, ProductVariant.where(product_id: product.id).count
     assert_equal "Loss Tee", Product[product.id].name, "nothing may be written, not even the product fields"
   end
 
   test "confirming the loss goes ahead" do
     product = build_product(options: { "Colour" => [ "Black", "Red" ], "Size" => [ "S" ] }, stock: 4)
-    params = without_value(form_params_for(product), "Colour", "Red").merge("confirm_loss" => "1")
+    params = without_value(form_params_for(product), "Colour", "Red")
+    refused = ProductEditor.new(product, params)
+    refute refused.save
 
-    editor = ProductEditor.new(product, params)
+    editor = ProductEditor.new(product.refresh, confirming(params, refused))
     assert editor.save, editor.errors.join(" ")
     assert_equal [ "Black / S" ], product.refresh.variants.map(&:label)
+  end
+
+  test "a confirmation covers only the variants it listed" do
+    product = build_product(options: { "Colour" => [ "Black", "Red", "Blue" ], "Size" => [ "S" ] }, stock: 4)
+    refused = ProductEditor.new(product, without_value(form_params_for(product), "Colour", "Red"))
+    refute refused.save
+
+    widened = without_value(without_value(form_params_for(product.refresh), "Colour", "Red"), "Colour", "Blue")
+    editor = ProductEditor.new(product.refresh, confirming(widened, refused))
+    refute editor.save, "Blue / S was never listed, so the old confirmation must not cover it"
+
+    assert_equal [ "Red / S", "Blue / S" ], editor.pending_loss.map(&:label)
+    assert_equal 3, product.refresh.variants.size
+  end
+
+  test "a price too large to store is an error, not a crash" do
+    editor = create(price: "30000000")
+    refute editor.save
+    assert_includes editor.errors, "Price must be an amount like 12.00."
+    assert_equal 0, Product.count
+  end
+
+  test "a price override too large to store is an error, not a crash" do
+    product = build_product(options: { "Size" => [ "S" ] })
+    params = form_params_for(product)
+    params["variants"][product.variants.first.id.to_s]["price_override"] = "30000000"
+
+    editor = ProductEditor.new(product, params)
+    refute editor.save
+    assert_includes editor.errors, "Price for S must be an amount like 12.00, or blank to use the product price."
   end
 
   test "renaming a value counts as removing it" do
@@ -286,7 +325,7 @@ class ProductEditorTest < ActiveSupport::TestCase
 
     # The submitted stock fields still name the old variant ids; they must be
     # ignored rather than crash once those variants are gone.
-    editor = ProductEditor.new(product.refresh, params.merge("confirm_loss" => "1"))
+    editor = ProductEditor.new(product.refresh, confirming(params, editor))
     assert editor.save, editor.errors.join(" ")
     assert_equal [ "S / Black", "M / Black" ], product.refresh.variants.map(&:label)
     assert_equal [ 0, 0 ], product.variants.map(&:stock)
