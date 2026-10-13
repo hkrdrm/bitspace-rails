@@ -11,8 +11,9 @@
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
         <% @products.each do |product| %>
           <%= link_to shop_product_path(product.slug), class: "group block border-2 border-brand-green rounded-xl overflow-hidden" do %>
-            <div class="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
+            <div class="relative aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
               <%= product_image_tag product, alt: product.name, class: "w-full h-full object-cover group-hover:scale-105 transition-transform" %>
+              <%= render "sold_out_overlay" unless product.in_stock? %>
             </div>
             <div class="p-5">
               <h2 class="font-display text-2xl tracking-tight"><%= product.name %></h2>

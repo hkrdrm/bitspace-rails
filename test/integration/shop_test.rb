@@ -171,4 +171,31 @@ class ShopTest < ActionDispatch::IntegrationTest
     assert_select "[aria-live='polite'] [data-variant-picker-target='status']"
     assert_select "button[data-variant-picker-target='button'] .sr-only[data-availability]", 5
   end
+
+  test "a product with no stock at all gets a sold out overlay on its card and page" do
+    shirt(slug: "gone", name: "Gone Tee", stock: 0)
+    shirt(slug: "around", name: "Around Tee")
+
+    get "/shop"
+    assert_select "a[href='/shop/gone'] [data-sold-out-overlay]", text: "Sold out"
+    assert_select "a[href='/shop/around'] [data-sold-out-overlay]", count: 0
+
+    get "/shop/gone"
+    assert_select "[data-sold-out-overlay]", text: "Sold out"
+  end
+
+  test "a product with only some sizes sold out gets no overlay" do
+    product = shirt(slug: "partly")
+    variant_named(product, "Black / M").update(stock: 0)
+
+    get "/shop/partly"
+    assert_select "[data-sold-out-overlay]", count: 0
+  end
+
+  test "a sold out simple product gets the overlay too" do
+    build_product(name: "Gone Sticker", slug: "gone-sticker", price: "4.00", stock: 0)
+
+    get "/shop/gone-sticker"
+    assert_select "[data-sold-out-overlay]", text: "Sold out"
+  end
 end
