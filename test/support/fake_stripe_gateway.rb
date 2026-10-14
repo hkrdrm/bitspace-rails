@@ -11,6 +11,7 @@ class FakeStripeGateway
     @sessions_created = []
     @tax_rates_created = []
     @sessions = {}
+    @tax_rates = {}
     @fail_with = nil
   end
 
@@ -34,7 +35,19 @@ class FakeStripeGateway
   def create_tax_rate(bps)
     fail_if_asked
     @tax_rates_created << bps
-    "txr_test_#{@tax_rates_created.size}"
+    id = "txr_test_#{@tax_rates_created.size}"
+    @tax_rates[id] = bps
+    id
+  end
+
+  def tax_rate_usable?(id, bps)
+    fail_if_asked
+    @tax_rates[id] == bps
+  end
+
+  # As if the rate were archived, or the keys switched to the other mode.
+  def forget_tax_rate(id)
+    @tax_rates.delete(id)
   end
 
   def construct_event(payload, signature)

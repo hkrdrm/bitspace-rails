@@ -61,7 +61,8 @@ class StoreSettingsForm
 
   def refresh_stripe_tax_rate
     return unless @setting.tax_enabled?
-    return if @setting.stripe_tax_rate_id && @setting.stripe_tax_rate_bps == @setting.tax_rate_bps
+    return if @setting.stripe_tax_rate_id && @setting.stripe_tax_rate_bps == @setting.tax_rate_bps &&
+              @gateway.tax_rate_usable?(@setting.stripe_tax_rate_id, @setting.tax_rate_bps)
 
     @setting.set(stripe_tax_rate_id: @gateway.create_tax_rate(@setting.tax_rate_bps),
                  stripe_tax_rate_bps: @setting.tax_rate_bps)

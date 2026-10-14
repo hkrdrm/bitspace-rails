@@ -39,6 +39,17 @@ class StripeGateway
     end
   end
 
+  # Whether a stored tax rate still works with this key: it exists in this
+  # key's mode (test and live ids do not cross), is active, and charges bps.
+  def tax_rate_usable?(id, bps)
+    rate = Stripe::TaxRate.retrieve(id, request_options)
+    rate.active && (rate.percentage.to_d * 100).round == bps
+  rescue Stripe::InvalidRequestError
+    false
+  rescue Stripe::StripeError => e
+    raise Error, e.message
+  end
+
   # Checks the Stripe-Signature header and returns the Stripe::Event.
   def construct_event(payload, signature)
     raise InvalidSignature, "no webhook secret is configured" if @webhook_secret.blank?

@@ -64,6 +64,17 @@ class AdminSettingsTest < ActionDispatch::IntegrationTest
     assert_equal "txr_test_2", StoreSetting.current.stripe_tax_rate_id
   end
 
+  # Test-mode tax rate ids do not exist in live mode, and an owner can archive
+  # a rate in the Stripe dashboard. Either leaves every checkout failing.
+  test "a stored tax rate Stripe can no longer use is replaced when the settings are saved again" do
+    save(tax_enabled: "1", tax_rate: "7")
+    stripe.forget_tax_rate("txr_test_1")
+
+    save(tax_enabled: "1", tax_rate: "7")
+    assert_equal [ 700, 700 ], stripe.tax_rates_created
+    assert_equal "txr_test_2", StoreSetting.current.stripe_tax_rate_id
+  end
+
   test "tax on without a rate, or with a bad one, is an error" do
     save(tax_enabled: "1", tax_rate: "")
     assert_select "li", text: "Tax rate is required while sales tax is on."

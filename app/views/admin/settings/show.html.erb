@@ -46,7 +46,7 @@
             <label for="settings_tax_rate" class="<%= label_class %>">Rate (%)</label>
             <input id="settings_tax_rate" name="settings[tax_rate]" type="text" inputmode="decimal" value="<%= @form.tax_rate_input %>" placeholder="7.00"
                    class="mt-2 w-40 <%= field_class %>">
-            <p class="mt-1 text-xs text-gray-500">Charged on items for Mississippi addresses and pickups. Not on shipping.</p>
+            <p class="mt-1 text-xs text-gray-500">Charged on items for Mississippi addresses and pickups. Not on shipping. After changing Stripe keys, save these settings again.</p>
           </div>
           <% unless @collecting_tax %>
             <p class="text-sm font-bold text-brand-orange">No sales tax is being collected.</p>

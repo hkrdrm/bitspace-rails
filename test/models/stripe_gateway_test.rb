@@ -36,6 +36,7 @@ class StripeGatewayTest < ActiveSupport::TestCase
   test "Stripe errors come back as StripeGateway::Error" do
     error = assert_raises(StripeGateway::Error) { gateway.create_tax_rate(700) }
     assert_match(/API key/i, error.message)
+    assert_raises(StripeGateway::Error) { gateway.tax_rate_usable?("txr_1", 700) }
   end
 
   test "tests never reach the real gateway" do

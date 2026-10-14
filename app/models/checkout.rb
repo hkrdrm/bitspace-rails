@@ -24,7 +24,8 @@ class Checkout
     order.update(stripe_session_id: session.id)
     Result.new(url: session.url, error: nil, order: order)
   rescue StripeGateway::Error => e
-    Rails.logger.warn("checkout failed for #{order&.number}: #{e.message}")
+    # Error, not warn: a failing tax rate or key stops every sale.
+    Rails.logger.error("checkout failed for #{order&.number}: #{e.message}")
     order&.destroy
     Result.new(url: nil, error: UNAVAILABLE, order: nil)
   end
