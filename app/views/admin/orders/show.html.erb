@@ -1,0 +1,78 @@
+<% label_class = "block text-xs font-bold uppercase tracking-widest text-gray-500" %>
+<div class="bg-white text-ink">
+  <%= render "shared/page_header", heading_top: "ORDER", heading_bottom: "#{@order.number}." %>
+
+  <%= render "admin/tabs" %>
+
+  <section class="max-w-5xl mx-auto px-6 py-12 space-y-8">
+    <div class="grid md:grid-cols-2 gap-8">
+      <%= render layout: "shared/panel", locals: { title: "Customer" } do %>
+        <dl class="space-y-4 text-sm">
+          <div>
+            <dt class="<%= label_class %>">Email</dt>
+            <dd class="mt-1 font-bold"><%= @order.email || "—" %></dd>
+          </div>
+          <div>
+            <dt class="<%= label_class %>">Delivery</dt>
+            <dd class="mt-1 text-gray-700">
+              <% if @order.pickup? %>
+                Pickup in McComb
+              <% else %>
+                <p class="font-bold"><%= @order.ship_name %></p>
+                <% @order.address_lines.each do |line| %>
+                  <p><%= line %></p>
+                <% end %>
+              <% end %>
+            </dd>
+          </div>
+          <div>
+            <dt class="<%= label_class %>">Paid</dt>
+            <dd class="mt-1 text-gray-700"><%= @order.paid_at&.strftime("%Y-%m-%d %H:%M") || "—" %></dd>
+          </div>
+          <% if @order.oversold? %>
+            <div><%= render "shared/status_badge", label: "Oversold", tone: :orange %>
+              <p class="mt-1 text-xs text-gray-500">There was not enough stock for this order when it was paid.</p></div>
+          <% end %>
+          <% if @order.stripe_payment_intent_id.present? %>
+            <div>
+              <%= link_to "View payment in Stripe", "https://dashboard.stripe.com/payments/#{@order.stripe_payment_intent_id}",
+                    target: "_blank", rel: "noopener", class: "font-bold text-brand-green underline decoration-2 underline-offset-4" %>
+            </div>
+          <% end %>
+        </dl>
+      <% end %>
+
+      <%= render layout: "shared/panel", locals: { title: "Update" } do %>
+        <%= form_with url: admin_order_path(@order.number), method: :patch, data: { turbo: false }, class: "space-y-4" do %>
+          <% if @error %>
+            <p class="text-sm font-bold text-brand-orange" data-order-error><%= @error %></p>
+          <% end %>
+          <div>
+            <label for="status" class="<%= label_class %>">Status</label>
+            <select id="status" name="status" class="mt-2 w-full px-3 py-2 text-sm text-ink bg-white border-2 border-gray-300 rounded-md">
+              <% Order::ADMIN_STATUSES.each do |status| %>
+                <option value="<%= status %>" <%= "selected" if status == @order.status %>><%= Order::STATUS_LABELS.fetch(status) %></option>
+              <% end %>
+            </select>
+          </div>
+          <div>
+            <label for="tracking_number" class="<%= label_class %>">Tracking number</label>
+            <input id="tracking_number" name="tracking_number" type="text" value="<%= @order.tracking_number %>" maxlength="<%= Order::MAX_TRACKING %>"
+                   class="mt-2 w-full px-3 py-2 text-sm text-ink bg-white border-2 border-gray-300 rounded-md">
+          </div>
+          <button type="submit"
+                  class="inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-white font-bold text-sm tracking-wide uppercase px-6 py-3 rounded">
+            Save <span aria-hidden="true">&rarr;</span>
+          </button>
+        <% end %>
+      <% end %>
+    </div>
+
+    <%= render layout: "shared/panel", locals: { title: "Items" } do %>
+      <%= render "orders/items", order: @order, show_sku: true %>
+      <%= render "orders/totals", order: @order %>
+    <% end %>
+
+    <p><%= link_to "← All orders", admin_orders_path, class: "font-bold text-sm uppercase tracking-wide text-brand-green" %></p>
+  </section>
+</div>

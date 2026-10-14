@@ -24,7 +24,7 @@ Rails.application.routes.draw do
   namespace :admin do
     root "overview#index"
     get "accounts" => "accounts#index", as: :accounts
-    get "orders"   => "orders#index",   as: :orders
+    resources :orders, only: [ :index, :show, :update ], param: :number
     get "traffic"  => "traffic#index",  as: :traffic
     resources :products, except: [ :show ]
     resource :settings, only: [ :show, :update ]

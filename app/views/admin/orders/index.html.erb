@@ -1,31 +1,60 @@
+<% filters = [ [ "All", nil ] ] + Admin::OrdersController::FILTERS.map { |key, (label, _)| [ label, key ] } %>
 <div class="bg-white text-ink">
   <%= render "shared/page_header", heading_top: "ALL", heading_bottom: "ORDERS." %>
 
   <%= render "admin/tabs" %>
 
   <section class="max-w-7xl mx-auto px-6 py-12">
-    <%= render layout: "shared/panel", locals: { title: "Orders", subtitle: "42 total" } do %>
-      <%= render layout: "shared/data_table", locals: { headers: [ "Order", "Customer", "Date", "Items", "Total", "Status", "" ] } do %>
-        <%
-          rows = [
-            [ "#1042", "freddie@queen.com", "2026-09-19", 3, "$54.00", "Shipped",  :green ],
-            [ "#1041", "brian@queen.com",   "2026-09-18", 1, "$12.00", "Paid",     :green ],
-            [ "#1040", "roger@queen.com",   "2026-09-16", 6, "$96.00", "Printing", :orange ],
-            [ "#1039", "john@queen.com",    "2026-09-12", 2, "$24.00", "Cancelled", :gray ]
-          ]
-        %>
-        <% rows.each do |number, customer, date, items, total, status, tone| %>
-          <tr>
-            <td class="py-3 pr-6 font-bold"><%= number %></td>
-            <td class="py-3 pr-6 text-gray-600"><%= customer %></td>
-            <td class="py-3 pr-6 text-gray-600 whitespace-nowrap"><%= date %></td>
-            <td class="py-3 pr-6 text-gray-600"><%= items %></td>
-            <td class="py-3 pr-6 font-bold whitespace-nowrap"><%= total %></td>
-            <td class="py-3 pr-6"><%= render "shared/status_badge", label: status, tone: tone %></td>
-            <td class="py-3 text-right">
-              <span class="font-bold text-xs uppercase tracking-widest text-brand-green">View</span>
-            </td>
-          </tr>
+    <%= render layout: "shared/panel", locals: { title: "Orders", subtitle: "#{@total} placed" } do %>
+      <div class="mb-6 flex flex-wrap items-center gap-4">
+        <%= form_with url: admin_orders_path, method: :get, class: "w-full max-w-xs" do %>
+          <% if @filter %><input type="hidden" name="filter" value="<%= @filter %>"><% end %>
+          <label for="order_search" class="sr-only">Search by order number or email</label>
+          <input id="order_search" type="search" name="q" value="<%= @query %>" placeholder="Order number or email"
+                 class="w-full px-3 py-2 text-sm text-ink bg-white border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-brand-green focus:ring-brand-green/40">
+        <% end %>
+        <nav class="flex flex-wrap gap-2" aria-label="Filter orders">
+          <% filters.each do |label, key| %>
+            <% current = @filter == key %>
+            <%= link_to label, admin_orders_path(q: @query.presence, filter: key),
+                  "aria-current": (current ? "page" : nil),
+                  class: "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest #{current ? "bg-brand-green text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}" %>
+          <% end %>
+        </nav>
+      </div>
+
+      <% if @orders.empty? %>
+        <%= render "shared/empty_state", message: "No orders match." %>
+      <% else %>
+        <%= render layout: "shared/data_table", locals: { headers: [ "Order", "Date", "Email", "Items", "Delivery", "Total", "Status", "" ] } do %>
+          <% @orders.each do |order| %>
+            <tr>
+              <td class="py-3 pr-6 font-bold whitespace-nowrap"><%= order.number %></td>
+              <td class="py-3 pr-6 text-gray-600 whitespace-nowrap"><%= (order.paid_at || order.created_at).to_date.iso8601 %></td>
+              <td class="py-3 pr-6 text-gray-600"><%= order.email %></td>
+              <td class="py-3 pr-6 text-gray-600"><%= order.item_count %></td>
+              <td class="py-3 pr-6 text-gray-600"><%= order.pickup? ? "Pickup" : "Ship" %></td>
+              <td class="py-3 pr-6 font-bold whitespace-nowrap"><%= price(order.total_cents) %></td>
+              <td class="py-3 pr-6">
+                <div class="flex flex-wrap gap-1">
+                  <%= render "shared/status_badge", label: order.status_label, tone: order_status_tone(order.status) %>
+                  <% if order.oversold? %>
+                    <%= render "shared/status_badge", label: "Oversold", tone: :orange %>
+                  <% end %>
+                </div>
+                <% if order.partially_refunded? %>
+                  <p class="mt-1 text-xs text-gray-500">Partially refunded <%= price(order.refunded_cents) %></p>
+                <% end %>
+              </td>
+              <td class="py-3 text-right">
+                <%= link_to "View", admin_order_path(order.number), class: "font-bold text-xs uppercase tracking-widest text-brand-green" %>
+              </td>
+            </tr>
+          <% end %>
+        <% end %>
+
+        <% if @matching > @orders.size %>
+          <p class="mt-4 text-xs text-gray-500">Showing the newest <%= @orders.size %> of <%= @matching %>. Search to narrow it down.</p>
         <% end %>
       <% end %>
     <% end %>
