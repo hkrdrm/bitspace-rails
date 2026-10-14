@@ -15,6 +15,7 @@ Rails.application.routes.draw do
   delete "cart/items/:variant_id" => "cart_items#destroy"
   post   "checkout"               => "checkouts#create",   as: :checkout
   get    "orders/:token"          => "orders#show",        as: :order
+  post "stripe/webhooks" => "stripe_webhooks#create", as: :stripe_webhooks
   get "dashboard"          => "dashboard#index",    as: :dashboard
   get "dashboard/account"  => "dashboard#account",  as: :dashboard_account
   get "dashboard/orders"   => "dashboard#orders",   as: :dashboard_orders
