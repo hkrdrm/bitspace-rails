@@ -117,6 +117,27 @@ module ActiveSupport
       product.refresh.variants.find { |variant| variant.label == label }
     end
 
+    # An order written directly, as if checkout and payment had already run.
+    # items are hashes of name:, label:, price: (cents), quantity:, and
+    # optionally variant_id: and sku:.
+    def build_order(status: "paid", fulfillment: "pickup", account: nil, items: nil, **attrs)
+      items ||= [ { name: "Test Tee", label: "Black / M", price: 1200, quantity: 1 } ]
+      subtotal = items.sum { |item| item[:price] * item[:quantity] }
+      order = Order.create({
+        status: status, fulfillment: fulfillment, account_id: account&.id,
+        email: account&.email || "buyer-#{SecureRandom.hex(3)}@example.test",
+        subtotal_cents: subtotal, total_cents: subtotal,
+        paid_at: (Time.current unless status == "pending")
+      }.merge(attrs))
+      items.each do |item|
+        OrderItem.create(
+          order_id: order.id, variant_id: item[:variant_id], product_name: item[:name],
+          variant_label: item[:label], sku: item[:sku], unit_price_cents: item[:price], quantity: item[:quantity]
+        )
+      end
+      order.refresh
+    end
+
     private def indexed(rows)
       rows.each_with_index.to_h { |row, index| [ index.to_s, row ] }
     end

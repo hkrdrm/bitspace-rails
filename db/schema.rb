@@ -54,6 +54,17 @@ Sequel.migration do
       primary_key [:filename]
     end
     
+    create_table(:store_settings) do
+      primary_key :id
+      column :shipping_cents, "integer", :default=>800, :null=>false
+      column :pickup_instructions, "text", :default=>"Pickup in McComb, MS. We'll reach out when it's ready.", :null=>false
+      column :tax_enabled, "boolean", :default=>false, :null=>false
+      column :tax_rate_bps, "integer"
+      column :stripe_tax_rate_id, "text"
+      column :stripe_tax_rate_bps, "integer"
+      column :updated_at, "timestamp without time zone"
+    end
+    
     create_table(:account_login_change_keys) do
       foreign_key :id, :accounts, :type=>"bigint", :null=>false, :key=>[:id]
       column :key, "text", :null=>false
@@ -105,6 +116,38 @@ Sequel.migration do
       column :deleted_at, "timestamp without time zone"
     end
     
+    create_table(:orders) do
+      primary_key :id
+      column :number, "text", :null=>false
+      column :token, "text", :null=>false
+      foreign_key :account_id, :accounts, :type=>"bigint", :key=>[:id], :on_delete=>:set_null
+      column :email, "text"
+      column :status, "text", :default=>"pending", :null=>false
+      column :fulfillment, "text", :null=>false
+      column :subtotal_cents, "integer", :null=>false
+      column :shipping_cents, "integer", :default=>0, :null=>false
+      column :tax_cents, "integer", :default=>0, :null=>false
+      column :total_cents, "integer", :null=>false
+      column :tax_rate_bps, "integer"
+      column :refunded_cents, "integer", :default=>0, :null=>false
+      column :ship_name, "text"
+      column :ship_address, "text"
+      column :tracking_number, "text"
+      column :oversold, "boolean", :default=>false, :null=>false
+      column :stripe_session_id, "text"
+      column :stripe_payment_intent_id, "text"
+      column :paid_at, "timestamp without time zone"
+      column :created_at, "timestamp without time zone", :null=>false
+      column :updated_at, "timestamp without time zone", :null=>false
+      
+      index [:account_id]
+      index [:number], :name=>:orders_number_key, :unique=>true
+      index [:status]
+      index [:stripe_payment_intent_id]
+      index [:stripe_session_id], :name=>:orders_stripe_session_id_key, :unique=>true
+      index [:token], :name=>:orders_token_key, :unique=>true
+    end
+    
     create_table(:product_options) do
       primary_key :id
       foreign_key :product_id, :products, :null=>false, :key=>[:id], :on_delete=>:cascade
@@ -139,6 +182,19 @@ Sequel.migration do
       index [:product_option_id, :name], :unique=>true
     end
     
+    create_table(:order_items) do
+      primary_key :id
+      foreign_key :order_id, :orders, :null=>false, :key=>[:id], :on_delete=>:cascade
+      foreign_key :variant_id, :product_variants, :key=>[:id], :on_delete=>:set_null
+      column :product_name, "text", :null=>false
+      column :variant_label, "text", :null=>false
+      column :sku, "text"
+      column :unit_price_cents, "integer", :null=>false
+      column :quantity, "integer", :null=>false
+      
+      index [:order_id]
+    end
+    
     create_table(:variant_option_values) do
       foreign_key :product_variant_id, :product_variants, :null=>false, :key=>[:id], :on_delete=>:cascade
       foreign_key :option_value_id, :option_values, :null=>false, :key=>[:id], :on_delete=>:cascade
@@ -159,5 +215,6 @@ self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('2026092113000
 self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('20260921140000_create_products.rb')"
 self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('20261013120000_rebuild_products_with_options.rb')"
 self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('20261013170000_add_created_at_to_accounts.rb')"
+self << "INSERT INTO \"schema_migrations\" (\"filename\") VALUES ('20261013200000_create_orders_and_store_settings.rb')"
                 end
               end
