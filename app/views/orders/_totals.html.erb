@@ -1,0 +1,8 @@
+<dl class="mt-6 space-y-1 text-sm" data-order-totals>
+  <% order_total_rows(order).each do |label, cents| %>
+    <div class="flex justify-between <%= "border-t-2 border-gray-200 pt-2 font-bold" if label == "Total" %>">
+      <dt><%= label %></dt>
+      <dd><%= price(cents) %></dd>
+    </div>
+  <% end %>
+</dl>

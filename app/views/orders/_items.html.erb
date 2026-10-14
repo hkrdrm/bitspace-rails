@@ -1,0 +1,16 @@
+<% show_sku = local_assigns.fetch(:show_sku, false) %>
+<div data-order-items>
+  <%= render layout: "shared/data_table", locals: { headers: [ "Item", (show_sku ? "SKU" : nil), "Qty", "Price", "Total" ].compact } do %>
+    <% order.items.each do |item| %>
+      <tr>
+        <td class="py-3 pr-6 font-bold"><%= item.variant_label == item.product_name ? item.product_name : "#{item.product_name} — #{item.variant_label}" %></td>
+        <% if show_sku %>
+          <td class="py-3 pr-6 text-gray-600"><%= item.sku.presence || "—" %></td>
+        <% end %>
+        <td class="py-3 pr-6"><%= item.quantity %></td>
+        <td class="py-3 pr-6 whitespace-nowrap"><%= price(item.unit_price_cents) %></td>
+        <td class="py-3 font-bold whitespace-nowrap"><%= price(item.total_cents) %></td>
+      </tr>
+    <% end %>
+  <% end %>
+</div>
