@@ -1,0 +1,63 @@
+<%
+  field_class = "px-3 py-2 text-sm text-ink bg-white border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-brand-green focus:ring-brand-green/40"
+  label_class = "block text-xs font-bold uppercase tracking-widest text-gray-500"
+%>
+<div class="bg-white text-ink">
+  <%= render "shared/page_header", heading_top: "STORE", heading_bottom: "SETTINGS." %>
+
+  <%= render "admin/tabs" %>
+
+  <section class="max-w-3xl mx-auto px-6 py-12">
+    <%= form_with url: admin_settings_path, method: :patch, data: { turbo: false }, class: "space-y-8" do %>
+      <% if @form.errors.any? %>
+        <div class="border-2 border-brand-orange rounded-lg p-4">
+          <p class="font-bold text-sm uppercase tracking-widest text-brand-orange">Could not save</p>
+          <ul class="mt-2 space-y-1 text-sm text-gray-700">
+            <% @form.errors.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <%= render layout: "shared/panel", locals: { title: "Delivery" } do %>
+        <div class="space-y-4">
+          <div>
+            <label for="settings_shipping" class="<%= label_class %>">Flat shipping rate</label>
+            <input id="settings_shipping" name="settings[shipping]" type="text" inputmode="decimal" value="<%= @form.shipping_input %>" class="mt-2 w-40 <%= field_class %>">
+            <p class="mt-1 text-xs text-gray-500">Charged once per shipped order. Pickup is free.</p>
+          </div>
+          <div>
+            <label for="settings_pickup_instructions" class="<%= label_class %>">Pickup instructions</label>
+            <textarea id="settings_pickup_instructions" name="settings[pickup_instructions]" rows="3" maxlength="<%= StoreSetting::MAX_INSTRUCTIONS %>"
+                      class="mt-2 w-full <%= field_class %>"><%= @form.pickup_input %></textarea>
+          </div>
+        </div>
+      <% end %>
+
+      <%= render layout: "shared/panel", locals: { title: "Sales tax" } do %>
+        <div class="space-y-4">
+          <label class="flex items-center gap-3 text-sm font-bold">
+            <input type="hidden" name="settings[tax_enabled]" value="0">
+            <input type="checkbox" name="settings[tax_enabled]" value="1" class="accent-brand-green" <%= "checked" if @form.tax_enabled? %>>
+            Collect Mississippi sales tax
+          </label>
+          <div>
+            <label for="settings_tax_rate" class="<%= label_class %>">Rate (%)</label>
+            <input id="settings_tax_rate" name="settings[tax_rate]" type="text" inputmode="decimal" value="<%= @form.tax_rate_input %>" placeholder="7.00"
+                   class="mt-2 w-40 <%= field_class %>">
+            <p class="mt-1 text-xs text-gray-500">Charged on items for Mississippi addresses and pickups. Not on shipping.</p>
+          </div>
+          <% unless @collecting_tax %>
+            <p class="text-sm font-bold text-brand-orange">No sales tax is being collected.</p>
+          <% end %>
+        </div>
+      <% end %>
+
+      <button type="submit"
+              class="inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-white font-bold text-sm tracking-wide uppercase px-6 py-3 rounded">
+        Save settings <span aria-hidden="true">&rarr;</span>
+      </button>
+    <% end %>
+  </section>
+</div>

@@ -2,7 +2,7 @@ require "test_helper"
 
 class AdminAuthorizationTest < ActionDispatch::IntegrationTest
   # Every path Admin::BaseController gates, including the three the tabs link to.
-  ADMIN_PATHS = %w[/admin /admin/accounts /admin/orders /admin/traffic].freeze
+  ADMIN_PATHS = %w[/admin /admin/accounts /admin/orders /admin/traffic /admin/settings].freeze
 
   test "signed out visitors are redirected away from admin" do
     get "/admin"
