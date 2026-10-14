@@ -7,11 +7,13 @@
   <%= render "admin/tabs" %>
 
   <section class="max-w-7xl mx-auto px-6 py-12 space-y-10">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
       <%= render "shared/stat_tile", label: "Accounts", value: @accounts, delta: "+#{@new_accounts} this week" %>
       <%= render "shared/stat_tile", label: "Verified", value: @verified %>
       <%= render "shared/stat_tile", label: "Products live", value: @products_live %>
       <%= render "shared/stat_tile", label: "Page views", value: @views, delta: "Last 7 days" %>
+      <%= render "shared/stat_tile", label: "Orders", value: @orders_week, delta: "Last 7 days" %>
+      <%= render "shared/stat_tile", label: "Revenue", value: price(@revenue_week), delta: "Last 7 days" %>
     </div>
 
     <div class="grid md:grid-cols-2 gap-8">

@@ -9,6 +9,7 @@ class AdminOverviewTest < ActionDispatch::IntegrationTest
   teardown do
     PageView.dataset.delete
     Product.dataset.delete
+    Order.dataset.delete
   end
 
   def tiles
@@ -27,7 +28,7 @@ class AdminOverviewTest < ActionDispatch::IntegrationTest
 
     # Accounts, Verified, Products live, Page views -- in render order.
     expected = [ Account.count, Account.where(status: 2).count, 1, 3 ].map(&:to_s)
-    assert_equal expected, tiles
+    assert_equal expected, tiles.first(4)
   end
 
   test "the accounts tile counts sign-ups from the last week" do
@@ -67,5 +68,23 @@ class AdminOverviewTest < ActionDispatch::IntegrationTest
 
     get "/admin"
     assert_select "[data-traffic-summary]", text: /3 page views.*2 from people.*1 from bots/m
+  end
+
+  test "the order tiles count this week's paid orders and their revenue after refunds" do
+    build_order(status: "paid", items: [ { name: "A", label: "A", price: 3000, quantity: 1 } ])
+    build_order(status: "shipped", refunded_cents: 500, items: [ { name: "B", label: "B", price: 2000, quantity: 1 } ])
+    build_order(status: "pending")
+    build_order(status: "completed", paid_at: 30.days.ago)
+
+    get "/admin"
+    assert_equal [ "2", "$45.00" ], tiles.last(2)
+  end
+
+  test "paid orders appear in recent activity" do
+    order = build_order(status: "paid", items: [ { name: "A", label: "A", price: 3800, quantity: 1 } ])
+
+    get "/admin"
+    items = css_select("[data-activity] li").map { |li| li.text.squish }
+    assert items.any? { |item| item.include?("Order #{order.number} paid — $38.00") }, "expected the order in #{items.inspect}"
   end
 end

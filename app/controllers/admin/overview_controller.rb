@@ -10,6 +10,10 @@ module Admin
       @new_accounts = Account.where { created_at >= week }.count
       @products_live = Product.where(active: true).count
 
+      paid = Order.placed.where { paid_at >= week }
+      @orders_week  = paid.count
+      @revenue_week = paid.get(Sequel.function(:coalesce, Sequel.function(:sum, Sequel[:total_cents] - Sequel[:refunded_cents]), 0)).to_i
+
       views = PageView.where { created_at >= week }
       @views  = views.count
       @humans = views.where(bot: false).count
@@ -20,8 +24,7 @@ module Admin
 
     private
 
-    # New sign-ups and product changes, newest first. Orders join this list
-    # once they exist.
+    # New sign-ups, product changes and paid orders, newest first.
     def recent_activity
       signups = Account.exclude(created_at: nil).order(Sequel.desc(:created_at)).limit(ACTIVITY_LIMIT).all.map do |account|
         { at: account.created_at, text: "New account: #{account.email}" }
@@ -32,7 +35,12 @@ module Admin
         { at: product.updated_at, text: "Product #{verb}: #{product.name}" }
       end
 
-      (signups + products).sort_by { |event| -event[:at].to_f }.first(ACTIVITY_LIMIT)
+      orders = Order.placed.exclude(paid_at: nil).order(Sequel.desc(:paid_at)).limit(ACTIVITY_LIMIT).all.map do |order|
+        total = ActiveSupport::NumberHelper.number_to_currency(order.total_cents / 100.0)
+        { at: order.paid_at, text: "Order #{order.number} paid — #{total}" }
+      end
+
+      (signups + products + orders).sort_by { |event| -event[:at].to_f }.first(ACTIVITY_LIMIT)
     end
   end
 end
