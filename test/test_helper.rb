@@ -4,6 +4,7 @@ require "rails/test_help"
 # rails/test_help only pulls in minitest/mock along the ActiveRecord path, which
 # this app does not load, so Object#stub would be undefined without this.
 require "minitest/mock"
+require_relative "support/fake_stripe_gateway"
 
 module ActiveSupport
   class TestCase
@@ -46,6 +47,29 @@ module ActiveSupport
         end
         Account.where(id: ids).delete
       end
+    end
+
+    # No test talks to Stripe. A test that needs the record of what the app
+    # asked for reads StripeGateway.current.
+    setup { StripeGateway.current = FakeStripeGateway.new }
+    teardown { StripeGateway.current = nil }
+
+    def stripe_signature(payload, secret: FakeStripeGateway::WEBHOOK_SECRET)
+      now = Time.now
+      Stripe::Webhook::Signature.generate_header(now, Stripe::Webhook::Signature.compute_signature(now, payload, secret))
+    end
+
+    # The fields of a paid Checkout Session for order, shaped as Stripe sends
+    # them (API 2026-09-30: the shipping address is under collected_information).
+    def paid_session(order, email: "buyer@example.test", tax: 0, shipping: 0, address: nil, payment_intent: "pi_#{SecureRandom.hex(6)}")
+      fields = {
+        id: order.stripe_session_id, object: "checkout.session", payment_status: "paid",
+        payment_intent: payment_intent, amount_total: order.subtotal_cents + shipping + tax,
+        customer_details: { email: email }, total_details: { amount_tax: tax, amount_shipping: shipping },
+        metadata: { order_id: order.id.to_s }
+      }
+      fields[:collected_information] = { shipping_details: { name: "Pat Buyer", address: address } } if address
+      fields
     end
 
     def create_account(email: nil, password: "password123", status: 2, superuser: false)
