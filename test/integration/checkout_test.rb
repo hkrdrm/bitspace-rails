@@ -51,7 +51,8 @@ class CheckoutTest < ActionDispatch::IntegrationTest
     params = stripe.sessions_created.last
 
     assert_equal "payment", params[:mode]
-    assert_equal [ "card" ], params[:payment_method_types]
+    # API 2026-09-30 rejects payment_method_types; methods are set in the Stripe Dashboard.
+    refute params.key?(:payment_method_types)
     assert_equal [ { quantity: 2, price_data: { currency: "usd", unit_amount: 2000, product_data: { name: "Check Tee — S" } } } ],
       params[:line_items]
     assert_equal({ order_id: order.id.to_s }, params[:metadata])

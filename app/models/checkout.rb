@@ -53,8 +53,9 @@ class Checkout
 
   def session_params(order)
     params = {
+      # Payment methods come from the Stripe Dashboard; the API no longer
+      # accepts payment_method_types here.
       mode: "payment",
-      payment_method_types: [ "card" ],
       line_items: @lines.map { |line| line_item(line) },
       metadata: { order_id: order.id.to_s },
       client_reference_id: order.number,
