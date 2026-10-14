@@ -15,9 +15,14 @@ class StripeWebhooksController < ActionController::API
 
   def handle(type, object)
     case type
-    when "checkout.session.completed"
+    # A delayed method (a bank debit) completes the session unpaid, which the
+    # fulfiller ignores, and settles later with async_payment_succeeded.
+    when "checkout.session.completed", "checkout.session.async_payment_succeeded"
       order = order_for(object)
       OrderFulfiller.new(order, object).call if order
+    when "checkout.session.async_payment_failed"
+      order = order_for(object)
+      order.update(status: "cancelled") if order&.pending?
     when "checkout.session.expired"
       order = order_for(object)
       order.destroy if order&.pending?

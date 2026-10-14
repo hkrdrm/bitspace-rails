@@ -42,6 +42,26 @@ class StripeWebhooksTest < ActionDispatch::IntegrationTest
     assert_equal 3, @small.refresh.stock
   end
 
+  # Bank debits and similar methods finish the session unpaid and settle days
+  # later with a separate event.
+  test "a delayed payment that settles later marks the order paid then" do
+    deliver("checkout.session.completed", paid_session(@order).merge(payment_status: "unpaid"))
+    assert_equal "pending", @order.refresh.status
+
+    deliver("checkout.session.async_payment_succeeded", paid_session(@order))
+    assert_response :ok
+    assert_equal "paid", @order.refresh.status
+    assert_equal 3, @small.refresh.stock
+  end
+
+  test "a delayed payment that fails cancels the order without taking stock" do
+    deliver("checkout.session.async_payment_failed", paid_session(@order).merge(payment_status: "unpaid"))
+
+    assert_response :ok
+    assert_equal "cancelled", @order.refresh.status
+    assert_equal 5, @small.refresh.stock
+  end
+
   test "a session whose id does not match the order's is ignored" do
     deliver("checkout.session.completed", paid_session(@order).merge(id: "cs_test_other"))
 
