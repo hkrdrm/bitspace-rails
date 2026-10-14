@@ -10,6 +10,7 @@
       <span><%= link_to "Portfolio", "https://my-portfolio-sooty-one-83.vercel.app/" %></span>
       <span>About</span>
       <span><%= link_to "Contact", contact_path %></span>
+      <span><%= link_to "Cart (#{cart_count})", cart_path %></span>
     </div>
 
     <div class="flex items-center gap-4">
@@ -34,6 +35,7 @@
     <span class="block py-2 border-b border-white/10"><%= link_to "Portfolio", "https://my-portfolio-sooty-one-83.vercel.app/" %></span>
     <span class="block py-2 border-b border-white/10">About</span>
     <span class="block py-2 border-b border-white/10"><%= link_to "Contact", contact_path %></span>
+    <span class="block py-2 border-b border-white/10"><%= link_to "Cart (#{cart_count})", cart_path %></span>
 
     <%= link_to "#", class: "mt-4 inline-flex items-center justify-center gap-2 bg-brand-green hover:bg-brand-green-dark text-white font-bold text-sm tracking-wide uppercase px-4 py-2 rounded" do %>
       Get a Quote <span aria-hidden="true">&rarr;</span>

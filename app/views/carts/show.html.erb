@@ -1,0 +1,69 @@
+<div class="bg-white text-ink">
+  <%= render "shared/page_header", heading_top: "YOUR", heading_bottom: "CART." %>
+
+  <section class="max-w-4xl mx-auto px-6 py-12 space-y-8">
+    <% if @lines.empty? %>
+      <%= render "shared/empty_state", message: "Your cart is empty.", cta_label: "Shop", cta_path: shop_path %>
+    <% else %>
+      <%= render layout: "shared/panel", locals: { title: "Items" } do %>
+        <ul class="divide-y divide-gray-200">
+          <% @lines.each do |line| %>
+            <li class="py-4 flex flex-wrap items-center gap-4" data-cart-line="<%= line.variant.id %>" <%= "data-unavailable" unless line.available? %>>
+              <div class="w-16 h-16 flex-shrink-0 rounded bg-gray-100 overflow-hidden">
+                <%= product_image_tag line.product, alt: "", class: "w-full h-full object-cover" %>
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="font-bold"><%= line.name %></p>
+                <p class="text-sm text-gray-600"><%= price(line.unit_price_cents) %> each</p>
+                <% unless line.available? %>
+                  <p class="mt-1 text-xs font-bold uppercase tracking-widest text-brand-orange">No longer available. It won't be included at checkout.</p>
+                <% end %>
+              </div>
+              <%= form_with url: cart_item_path(line.variant.id), method: :patch, class: "flex items-center gap-2" do %>
+                <label for="quantity_<%= line.variant.id %>" class="sr-only">Quantity of <%= line.name %></label>
+                <input id="quantity_<%= line.variant.id %>" type="number" name="quantity" min="0" max="<%= Cart::MAX_QUANTITY %>" value="<%= line.quantity %>"
+                       class="w-20 px-2 py-1 text-sm text-ink bg-white border-2 border-gray-300 rounded-md">
+                <button type="submit" class="text-xs font-bold uppercase tracking-widest text-brand-green">Update</button>
+              <% end %>
+              <%= button_to "Remove", cart_item_path(line.variant.id), method: :delete,
+                    class: "text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-brand-orange" %>
+              <p class="w-24 text-right font-bold"><%= line.available? ? price(line.total_cents) : "—" %></p>
+            </li>
+          <% end %>
+        </ul>
+        <p class="mt-6 flex justify-between border-t-2 border-gray-200 pt-4 font-bold">
+          <span>Subtotal</span><span data-subtotal><%= price(@subtotal) %></span>
+        </p>
+      <% end %>
+
+      <% if @lines.any?(&:available?) %>
+        <%# Turbo cannot follow a redirect to another origin, and checkout redirects to Stripe. %>
+        <%= form_with url: checkout_path, data: { turbo: false } do %>
+          <%= render layout: "shared/panel", locals: { title: "Delivery" } do %>
+            <fieldset class="space-y-4">
+              <legend class="sr-only">Pickup or shipping</legend>
+              <label class="flex items-start gap-3">
+                <input type="radio" name="fulfillment" value="pickup" required class="mt-1 accent-brand-green">
+                <span>
+                  <span class="font-bold">Pickup in McComb — Free</span>
+                  <span class="block text-sm text-gray-600"><%= @settings.pickup_instructions %></span>
+                </span>
+              </label>
+              <label class="flex items-start gap-3">
+                <input type="radio" name="fulfillment" value="shipping" required class="mt-1 accent-brand-green">
+                <span class="font-bold">Ship it — <%= price(@settings.shipping_cents) %> flat</span>
+              </label>
+            </fieldset>
+            <% if @settings.checkout_tax_rate_id %>
+              <p class="mt-4 text-sm text-gray-600" data-tax-note>Mississippi sales tax is added at checkout for MS addresses and pickups.</p>
+            <% end %>
+            <button type="submit"
+                    class="mt-6 inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-white font-bold text-sm tracking-wide uppercase px-6 py-3 rounded">
+              Checkout <span aria-hidden="true">&rarr;</span>
+            </button>
+          <% end %>
+        <% end %>
+      <% end %>
+    <% end %>
+  </section>
+</div>

@@ -69,7 +69,34 @@
         </ul>
       <% end %>
 
-      <p class="mt-8 text-xs text-gray-500">Ordering online is not open yet — get in touch for a quote.</p>
+      <% if @product.in_stock? %>
+        <%= form_with url: cart_items_path, class: "mt-8 space-y-4" do %>
+          <% if @product.simple? %>
+            <input type="hidden" name="variant_id" value="<%= @product.variants.first.id %>">
+          <% else %>
+            <%# Without JavaScript this select is the picker; with it, the picker fills it in. %>
+            <div data-variant-picker-target="choice">
+              <label for="variant_id" class="text-xs font-bold uppercase tracking-widest text-gray-500">Choose</label>
+              <select id="variant_id" name="variant_id" required data-variant-picker-target="select"
+                      class="mt-2 w-full px-3 py-2 text-sm text-ink bg-white border-2 border-gray-300 rounded-md">
+                <option value="">Choose an option</option>
+                <% @product.variants.reject(&:sold_out?).each do |variant| %>
+                  <option value="<%= variant.id %>"><%= variant.label %> — <%= price(variant.price_cents) %></option>
+                <% end %>
+              </select>
+            </div>
+          <% end %>
+          <div class="flex items-end gap-4">
+            <div>
+              <label for="quantity" class="text-xs font-bold uppercase tracking-widest text-gray-500">Quantity</label>
+              <input id="quantity" type="number" name="quantity" value="1" min="1" max="<%= Cart::MAX_QUANTITY %>"
+                     class="mt-2 w-20 px-2 py-2 text-sm text-ink bg-white border-2 border-gray-300 rounded-md">
+            </div>
+            <button type="submit" data-variant-picker-target="submit"
+                    class="inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark disabled:opacity-50 text-white font-bold text-sm tracking-wide uppercase px-6 py-3 rounded">Add to cart</button>
+          </div>
+        <% end %>
+      <% end %>
     </div>
   <% end %>
 </div>

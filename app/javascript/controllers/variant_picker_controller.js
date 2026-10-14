@@ -5,7 +5,7 @@ import { Controller } from "@hotwired/stimulus"
 // option instead. Prices and stock come from the variants value, rendered by
 // the server, so nothing here formats money or reads availability from markup.
 export default class extends Controller {
-  static targets = ["list", "picker", "button", "fixed", "price", "status", "image"]
+  static targets = ["list", "picker", "button", "fixed", "price", "status", "image", "choice", "select", "submit"]
   static values = { variants: Array, images: Object, from: String }
 
   connect() {
@@ -16,6 +16,7 @@ export default class extends Controller {
 
     this.listTarget.classList.add("hidden")
     this.pickerTarget.classList.remove("hidden")
+    if (this.hasChoiceTarget) this.choiceTarget.classList.add("hidden")
     this.render()
   }
 
@@ -53,6 +54,13 @@ export default class extends Controller {
     this.priceTarget.textContent = variant ? variant.price : this.fromValue
     this.statusTarget.textContent = variant ? (variant.stock > 0 ? "In stock" : "Sold out") : "Choose your options"
     this.showImage()
+
+    // The add-to-cart form posts the select; the buttons choose for it.
+    if (this.hasSelectTarget) {
+      const buyable = Boolean(variant && variant.stock > 0)
+      this.selectTarget.value = buyable ? String(variant.id) : ""
+      if (this.hasSubmitTarget) this.submitTarget.disabled = !buyable
+    }
   }
 
   matchesOtherOptions(variant, optionId) {

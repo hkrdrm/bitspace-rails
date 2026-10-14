@@ -33,10 +33,10 @@
 
   <body class="flex flex-col bg-gray-900 text-white min-h-screen">
     <% if notice %>
-      <div class="alert alert-success"><%= notice %></div>
+      <div class="bg-brand-green text-white text-sm font-bold text-center px-6 py-3" role="status" data-flash="notice"><%= notice %></div>
     <% end %>
     <% if alert %>
-      <div class="alert alert-danger"><%= alert %></div>
+      <div class="bg-brand-orange text-white text-sm font-bold text-center px-6 py-3" role="alert" data-flash="alert"><%= alert %></div>
     <% end %>
 
     <div class="mb-auto">

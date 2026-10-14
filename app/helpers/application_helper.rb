@@ -5,6 +5,11 @@ module ApplicationHelper
     number_to_currency((cents || 0) / 100.0)
   end
 
+  # Items in the visitor's cart, for the nav. Reads the session only.
+  def cart_count
+    Cart.new(session).count
+  end
+
   # The served URL for a filename under app/assets/images, or nil when no such
   # file exists. Every render site guards this way rather than calling
   # image_tag directly: Propshaft raises on a missing asset, and a file can
