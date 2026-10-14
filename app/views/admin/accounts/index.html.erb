@@ -36,7 +36,7 @@
               <td class="py-3 pr-6 font-bold"><%= account.email %></td>
               <td class="py-3 pr-6"><%= render "shared/status_badge", label: label, tone: tone %></td>
               <td class="py-3 pr-6 text-gray-600"><%= account.superuser? ? "Superuser" : "Customer" %></td>
-              <td class="py-3 pr-6 text-gray-600 whitespace-nowrap"><%= account.created_at&.to_date&.iso8601 || "—" %></td>
+              <td class="py-3 pr-6 text-gray-600 whitespace-nowrap"><%= local_time(account.created_at, format: :date) %></td>
             </tr>
           <% end %>
         <% end %>

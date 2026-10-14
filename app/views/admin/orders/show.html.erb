@@ -27,7 +27,7 @@
           </div>
           <div>
             <dt class="<%= label_class %>">Paid</dt>
-            <dd class="mt-1 text-gray-700"><%= @order.paid_at&.strftime("%Y-%m-%d %H:%M") || "—" %></dd>
+            <dd class="mt-1 text-gray-700"><%= local_time(@order.paid_at) %></dd>
           </div>
           <% if @order.oversold? %>
             <div><%= render "shared/status_badge", label: "Oversold", tone: :orange %>

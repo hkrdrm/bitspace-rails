@@ -20,7 +20,7 @@
       <p class="mt-2 text-sm text-gray-600">Bookmark this page to check on your order.</p>
     </div>
 
-    <%= render layout: "shared/panel", locals: { title: "Items", subtitle: "Placed #{@order.created_at.to_date.iso8601}" } do %>
+    <%= render layout: "shared/panel", locals: { title: "Items", subtitle: safe_join([ "Placed ", local_time(@order.created_at, format: :date) ]) } do %>
       <%= render "orders/items", order: @order %>
       <%= render "orders/totals", order: @order %>
     <% end %>

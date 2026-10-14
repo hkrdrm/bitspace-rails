@@ -5,6 +5,17 @@ module ApplicationHelper
     number_to_currency((cents || 0) / 100.0)
   end
 
+  # A moment for a person to read. The server renders it in UTC; the
+  # local-time controller rewrites it in the viewer's own time zone.
+  # format: :datetime ("2026-10-14 17:42 UTC") or :date ("2026-10-14").
+  def local_time(time, format: :datetime)
+    return "—" if time.nil?
+
+    utc = time.utc
+    fallback = format == :date ? utc.to_date.iso8601 : utc.strftime("%Y-%m-%d %H:%M UTC")
+    tag.time(fallback, datetime: utc.iso8601, data: { controller: "local-time", local_time_format_value: format })
+  end
+
   # Items in the visitor's cart, for the nav. Reads the session only.
   def cart_count
     Cart.new(session).count

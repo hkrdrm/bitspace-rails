@@ -5,7 +5,7 @@
     <% orders.each do |order| %>
       <tr>
         <td class="py-3 pr-6 font-bold whitespace-nowrap"><%= order.number %></td>
-        <td class="py-3 pr-6 text-gray-600 whitespace-nowrap"><%= (order.paid_at || order.created_at).to_date.iso8601 %></td>
+        <td class="py-3 pr-6 text-gray-600 whitespace-nowrap"><%= local_time(order.paid_at || order.created_at, format: :date) %></td>
         <td class="py-3 pr-6"><%= render "shared/status_badge", label: order.status_label, tone: order_status_tone(order.status) %></td>
         <td class="py-3 pr-6 font-bold whitespace-nowrap"><%= price(order.total_cents) %></td>
         <td class="py-3 text-right">

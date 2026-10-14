@@ -30,7 +30,7 @@
           <% @orders.each do |order| %>
             <tr>
               <td class="py-3 pr-6 font-bold whitespace-nowrap"><%= order.number %></td>
-              <td class="py-3 pr-6 text-gray-600 whitespace-nowrap"><%= (order.paid_at || order.created_at).to_date.iso8601 %></td>
+              <td class="py-3 pr-6 text-gray-600 whitespace-nowrap"><%= local_time(order.paid_at || order.created_at, format: :date) %></td>
               <td class="py-3 pr-6 text-gray-600"><%= order.email %></td>
               <td class="py-3 pr-6 text-gray-600"><%= order.item_count %></td>
               <td class="py-3 pr-6 text-gray-600"><%= order.pickup? ? "Pickup" : "Ship" %></td>
