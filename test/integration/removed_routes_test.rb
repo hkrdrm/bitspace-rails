@@ -21,6 +21,7 @@ class RemovedRoutesTest < ActionDispatch::IntegrationTest
   test "new_issue route is gone" do
     assert_routing_error "/dashboard/new_issue"
     assert_routing_error "/dashboard/create_issue", method: :post
+    assert_routing_error "/dashboard/checkout"
 
     assert_equal({ controller: "dashboard", action: "index" },
       Rails.application.routes.recognize_path("/dashboard", method: :get))

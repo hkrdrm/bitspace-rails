@@ -1,7 +1,7 @@
 require "test_helper"
 
 class DashboardAuthorizationTest < ActionDispatch::IntegrationTest
-  PATHS = %w[/dashboard /dashboard/account /dashboard/orders /dashboard/checkout].freeze
+  PATHS = %w[/dashboard /dashboard/account /dashboard/orders].freeze
 
   test "signed out visitors are redirected away from every dashboard page" do
     PATHS.each do |path|
