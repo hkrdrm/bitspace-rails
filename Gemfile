@@ -68,6 +68,8 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+  # Minitest 6 ships Object#stub and Minitest::Mock as a separate gem.
+  gem "minitest-mock"
 end
 
 gem "rodauth-rails", "~> 2.1"
