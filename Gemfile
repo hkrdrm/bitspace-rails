@@ -68,6 +68,8 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+  # Minitest 6 ships Object#stub and Minitest::Mock as a separate gem.
+  gem "minitest-mock"
 end
 
 gem "rodauth-rails", "~> 2.1"
@@ -76,8 +78,8 @@ gem "bcrypt", "~> 3.1", require: false
 # Used by Rodauth for rendering built-in view and email templates
 gem "tilt", "~> 2.4", require: false
 
-gem "tailwindcss-ruby", "~> 4.1"
+gem "tailwindcss-ruby", "~> 4.3"
 
-gem "tailwindcss-rails", "~> 4.2"
+gem "tailwindcss-rails", "~> 4.6"
 
 gem "stripe", "~> 20.0"
