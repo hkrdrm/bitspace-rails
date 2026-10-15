@@ -2,7 +2,7 @@
   "ignored_warnings": [
     {
       "warning_type": "Unmaintained Dependency",
-      "fingerprint": "21ab0fe00fdd5899ffc405cff75aadb91b805ee996a614f7e27b08a287e9062d",
+      "fingerprint": "98b26f60d776fd41ee6f088c833725145be9aac2d7c5b33780241c273622db42",
       "check_name": "EOLRails",
       "message": "Support for Rails 8.0.2 ends on 2026-11-07",
       "file": "Gemfile.lock",
@@ -27,7 +27,15 @@
       "user_input": "request.get?",
       "confidence": "Weak",
       "note": "Not an authorization check. This guard only decides whether to write an analytics row, and skipping HEAD is the behaviour we want: a HEAD request renders no body and is not a page view. Excluding it keeps monitors and link checkers out of the traffic figures. Nothing is permitted or denied here."
+    },
+    {
+      "warning_type": "Redirect",
+      "fingerprint": "36e794df561e41d7864e32af2e1325f2382b55e8f4df1256e9e470f9689986d8",
+      "check_name": "Redirect",
+      "message": "Possible unprotected redirect",
+      "file": "app/controllers/checkouts_controller.rb",
+      "note": "The URL is the hosted Checkout page Stripe returns from our own server-side create_checkout_session call (see Checkout#start). No request parameter reaches it, so it cannot be pointed at another host."
     }
   ],
-  "brakeman_version": "8.0.6"
+  "brakeman_version": "8.1.0"
 }
