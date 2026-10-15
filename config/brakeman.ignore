@@ -1,14 +1,6 @@
 {
   "ignored_warnings": [
     {
-      "warning_type": "Unmaintained Dependency",
-      "fingerprint": "98b26f60d776fd41ee6f088c833725145be9aac2d7c5b33780241c273622db42",
-      "check_name": "EOLRails",
-      "message": "Support for Rails 8.0.2 ends on 2026-11-07",
-      "file": "Gemfile.lock",
-      "note": "Upgrade to Rails 8.1 before 2026-11-07, then remove this entry."
-    },
-    {
       "warning_type": "HTTP Verb Confusion",
       "warning_code": 118,
       "fingerprint": "b728f9b3eef40e30602ccd507fc4df89f6ab38e938b6666f60cc3b4170a6eee5",
